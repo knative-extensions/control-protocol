@@ -8,3 +8,4 @@ aliases:
   wg-leads:
     # TODO(leads): add yourselves to this list and optionally rename it with your
     # WG name. If you choose to rename, update the alias name in the OWNERS file.
+    - slinkydeveloper
