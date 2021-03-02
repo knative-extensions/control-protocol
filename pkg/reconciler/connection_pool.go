@@ -25,7 +25,7 @@ import (
 
 	"knative.dev/pkg/logging"
 
-	"knative.dev/control-protocol/pkg"
+	control "knative.dev/control-protocol/pkg"
 	"knative.dev/control-protocol/pkg/network"
 )
 

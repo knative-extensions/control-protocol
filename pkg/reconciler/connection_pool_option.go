@@ -16,9 +16,7 @@ limitations under the License.
 
 package reconciler
 
-import (
-	"knative.dev/control-protocol/pkg"
-)
+import control "knative.dev/control-protocol/pkg"
 
 type ControlPlaneConnectionPoolOption func(*ControlPlaneConnectionPool)
 

@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"knative.dev/pkg/logging"
 
-	"knative.dev/control-protocol/pkg"
+	control "knative.dev/control-protocol/pkg"
 )
 
 type NotificationStore struct {
