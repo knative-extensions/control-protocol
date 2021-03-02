@@ -35,7 +35,7 @@ import (
 
 	reconcilersecret "knative.dev/pkg/client/injection/kube/reconciler/core/v1/secret"
 
-	"knative.dev/eventing/pkg/control/certificates"
+	"knative.dev/control-protocol/pkg/certificates"
 )
 
 const (

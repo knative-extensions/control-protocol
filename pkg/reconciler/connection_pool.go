@@ -25,8 +25,8 @@ import (
 
 	"knative.dev/pkg/logging"
 
-	"knative.dev/eventing/pkg/control"
-	"knative.dev/eventing/pkg/control/network"
+	"knative.dev/control-protocol/pkg"
+	"knative.dev/control-protocol/pkg/network"
 )
 
 const (

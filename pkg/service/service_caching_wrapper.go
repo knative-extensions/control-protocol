@@ -24,7 +24,7 @@ import (
 
 	"knative.dev/pkg/logging"
 
-	"knative.dev/eventing/pkg/control"
+	"knative.dev/control-protocol/pkg"
 )
 
 type cachingService struct {

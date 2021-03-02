@@ -25,8 +25,8 @@ import (
 	"go.uber.org/zap"
 	"knative.dev/pkg/logging"
 
-	"knative.dev/eventing/pkg/control"
-	"knative.dev/eventing/pkg/control/service"
+	"knative.dev/control-protocol/pkg"
+	"knative.dev/control-protocol/pkg/service"
 )
 
 func setupConnection(t *testing.T) (control.Service, control.Service) {

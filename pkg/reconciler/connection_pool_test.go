@@ -31,10 +31,10 @@ import (
 	"go.uber.org/zap"
 	"knative.dev/pkg/logging"
 
-	"knative.dev/eventing/pkg/control"
-	"knative.dev/eventing/pkg/control/certificates"
-	"knative.dev/eventing/pkg/control/network"
-	"knative.dev/eventing/pkg/control/service"
+	"knative.dev/control-protocol/pkg"
+	"knative.dev/control-protocol/pkg/certificates"
+	"knative.dev/control-protocol/pkg/network"
+	"knative.dev/control-protocol/pkg/service"
 )
 
 type mockMessage string

@@ -31,8 +31,8 @@ import (
 	"go.uber.org/zap"
 	"knative.dev/pkg/logging"
 
-	"knative.dev/eventing/pkg/control"
-	"knative.dev/eventing/pkg/control/certificates"
+	"knative.dev/control-protocol/pkg"
+	"knative.dev/control-protocol/pkg/certificates"
 )
 
 type mockMessage string

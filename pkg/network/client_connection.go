@@ -24,8 +24,8 @@ import (
 
 	"knative.dev/pkg/logging"
 
-	ctrl "knative.dev/eventing/pkg/control"
-	ctrlservice "knative.dev/eventing/pkg/control/service"
+	ctrl "knative.dev/control-protocol/pkg"
+	ctrlservice "knative.dev/control-protocol/pkg/service"
 )
 
 type Dialer interface {

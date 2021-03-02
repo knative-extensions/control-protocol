@@ -23,7 +23,7 @@ import (
 	"go.uber.org/atomic"
 	"k8s.io/apimachinery/pkg/types"
 
-	"knative.dev/eventing/pkg/control"
+	"knative.dev/control-protocol/pkg"
 )
 
 func setupNotificationStoreTest(t *testing.T) (control.Service, *atomic.Int32, *NotificationStore, types.NamespacedName, string) {

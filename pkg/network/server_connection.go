@@ -26,9 +26,9 @@ import (
 
 	"knative.dev/pkg/logging"
 
-	ctrl "knative.dev/eventing/pkg/control"
-	"knative.dev/eventing/pkg/control/certificates"
-	"knative.dev/eventing/pkg/control/service"
+	ctrl "knative.dev/control-protocol/pkg"
+	"knative.dev/control-protocol/pkg/certificates"
+	"knative.dev/control-protocol/pkg/service"
 )
 
 const (

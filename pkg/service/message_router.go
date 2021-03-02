@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 	"knative.dev/pkg/logging"
 
-	"knative.dev/eventing/pkg/control"
+	"knative.dev/control-protocol/pkg"
 )
 
 type MessageRouter map[control.OpCode]control.MessageHandler

@@ -26,7 +26,7 @@ import (
 	"github.com/google/uuid"
 	"knative.dev/pkg/logging"
 
-	ctrl "knative.dev/eventing/pkg/control"
+	ctrl "knative.dev/control-protocol/pkg"
 )
 
 const (

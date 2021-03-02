@@ -24,7 +24,7 @@ import (
 
 	v1 "k8s.io/client-go/listers/core/v1"
 
-	"knative.dev/eventing/pkg/control/certificates"
+	"knative.dev/control-protocol/pkg/certificates"
 )
 
 type TLSDialerFactory interface {

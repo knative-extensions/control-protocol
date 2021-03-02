@@ -27,7 +27,7 @@ import (
 
 	"go.uber.org/zap"
 
-	ctrl "knative.dev/eventing/pkg/control"
+	ctrl "knative.dev/control-protocol/pkg"
 )
 
 type baseTcpConnection struct {

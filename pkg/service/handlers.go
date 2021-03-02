@@ -21,7 +21,7 @@ import (
 
 	"knative.dev/pkg/logging"
 
-	ctrl "knative.dev/eventing/pkg/control"
+	ctrl "knative.dev/control-protocol/pkg"
 )
 
 // NoopMessageHandler is a default noop message handler that logs the message and acks it.

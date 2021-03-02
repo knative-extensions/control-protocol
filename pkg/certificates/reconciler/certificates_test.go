@@ -37,7 +37,7 @@ import (
 	. "knative.dev/pkg/reconciler/testing"
 	"knative.dev/pkg/system"
 
-	"knative.dev/eventing/pkg/control/certificates"
+	"knative.dev/control-protocol/pkg/certificates"
 )
 
 func setupTest(t *testing.T, ctor injection.ControllerConstructor) (context.Context, *controller.Impl) {
