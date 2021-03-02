@@ -18,6 +18,7 @@ package reconciler
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -34,15 +35,16 @@ func setupConnection(t *testing.T) (control.Service, control.Service) {
 	ctx := logging.WithLogger(context.TODO(), logger.Sugar())
 
 	dataPlane, connectionPool := setupInsecureServerAndConnectionPool(t, ctx)
+	address := fmt.Sprintf("127.0.0.1:%d", dataPlane.ListeningPort())
 
 	clientCtx, clientCancelFn := context.WithCancel(ctx)
 
-	conns, err := connectionPool.ReconcileConnections(clientCtx, "hello", []string{"127.0.0.1"}, nil, nil)
+	conns, err := connectionPool.ReconcileConnections(clientCtx, "hello", []string{address}, nil, nil)
 	require.NoError(t, err)
-	require.Contains(t, conns, "127.0.0.1")
+	require.Contains(t, conns, address)
 	t.Cleanup(clientCancelFn)
 
-	controlPlane := conns["127.0.0.1"]
+	controlPlane := conns[address]
 
 	return controlPlane, dataPlane
 }
