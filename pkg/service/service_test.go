@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 
@@ -71,4 +72,25 @@ func TestService_MessageHandler(t *testing.T) {
 	outboundMessage := <-mockConnection.OutboundCh
 	require.Equal(t, uint8(ctrl.AckOpCode), outboundMessage.OpCode())
 	require.Equal(t, msgUuid, outboundMessage.UUID())
+}
+
+func TestService_ErrorHandler(t *testing.T) {
+	mockConnection := test.NewConnectionMock()
+
+	ctx, cancelFn := context.WithCancel(context.TODO())
+	t.Cleanup(cancelFn)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	svc := service.NewService(ctx, mockConnection)
+
+	svc.ErrorHandler(ctrl.ErrorHandlerFunc(func(ctx context.Context, err error) {
+		defer wg.Done()
+		assert.Error(t, err, "my err")
+	}))
+
+	mockConnection.ErrorsCh <- errors.New("my err")
+
+	wg.Wait()
 }

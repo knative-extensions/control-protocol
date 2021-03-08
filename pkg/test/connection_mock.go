@@ -27,3 +27,18 @@ func (c *ConnectionMock) InboundMessages() <-chan *control.InboundMessage {
 func (c *ConnectionMock) Errors() <-chan error {
 	return c.ErrorsCh
 }
+
+func (c *ConnectionMock) ConsumeOutboundMessages() []*control.OutboundMessage {
+	var res []*control.OutboundMessage
+	for {
+		select {
+		case msg, ok := <-c.OutboundCh:
+			if !ok {
+				return res
+			}
+			res = append(res, msg)
+		default:
+			return res
+		}
+	}
+}
