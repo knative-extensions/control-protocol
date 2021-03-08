@@ -21,6 +21,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"net"
 	"sync"
 	"testing"
@@ -115,20 +116,20 @@ func TestClientToServerWithClientStop(t *testing.T) {
 	t.Cleanup(clientCancelFn)
 	t.Cleanup(serverCancelFn)
 
-	server, closedServerSignal, err := StartControlServer(serverCtx, serverTLSConf)
+	controlServer, err := StartControlServer(serverCtx, serverTLSConf, WithPort(0))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		serverCancelFn()
-		<-closedServerSignal
+		<-controlServer.ClosedCh()
 	})
 
-	client, err := StartControlClient(clientCtx, clientTLSDialer, "localhost")
+	client, err := StartControlClient(clientCtx, clientTLSDialer, fmt.Sprintf("localhost:%d", controlServer.ListeningPort()))
 	require.NoError(t, err)
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	server.MessageHandler(control.MessageHandlerFunc(func(ctx context.Context, message control.ServiceMessage) {
+	controlServer.MessageHandler(control.MessageHandlerFunc(func(ctx context.Context, message control.ServiceMessage) {
 		require.Equal(t, uint8(1), message.Headers().OpCode())
 		require.Equal(t, "Funky!", string(message.Payload()))
 		message.Ack()
@@ -145,7 +146,7 @@ func TestClientToServerWithClientStop(t *testing.T) {
 
 	clientCtx2, clientCancelFn2 := context.WithCancel(ctx)
 	t.Cleanup(clientCancelFn2)
-	client2, err := StartControlClient(clientCtx2, clientTLSDialer, "localhost")
+	client2, err := StartControlClient(clientCtx2, clientTLSDialer, fmt.Sprintf("localhost:%d", controlServer.ListeningPort()))
 	require.NoError(t, err)
 
 	require.NoError(t, client2.SendAndWaitForAck(1, mockMessage("Funky!")))
@@ -163,16 +164,16 @@ func TestClientToServerWithServerStop(t *testing.T) {
 	t.Cleanup(clientCancelFn)
 	t.Cleanup(serverCancelFn)
 
-	server, closedServerSignal, err := StartControlServer(serverCtx, serverTLSConf)
+	controlServer, err := StartControlServer(serverCtx, serverTLSConf)
 	require.NoError(t, err)
 
-	client, err := StartControlClient(clientCtx, clientTLSDialer, "localhost")
+	client, err := StartControlClient(clientCtx, clientTLSDialer, fmt.Sprintf("127.0.0.1:%d", controlServer.ListeningPort()))
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	server.MessageHandler(control.MessageHandlerFunc(func(ctx context.Context, message control.ServiceMessage) {
+	controlServer.MessageHandler(control.MessageHandlerFunc(func(ctx context.Context, message control.ServiceMessage) {
 		require.Equal(t, uint8(1), message.Headers().OpCode())
 		require.Equal(t, "Funky!", string(message.Payload()))
 		message.Ack()
@@ -185,17 +186,17 @@ func TestClientToServerWithServerStop(t *testing.T) {
 
 	serverCancelFn()
 
-	<-closedServerSignal
+	<-controlServer.ClosedCh()
 
 	serverCtx2, serverCancelFn2 := context.WithCancel(ctx)
-	server2, closedServerSignal, err := StartControlServer(serverCtx2, serverTLSConf)
+	controlServer2, err := StartControlServer(serverCtx2, serverTLSConf, WithPort(controlServer.ListeningPort()))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		serverCancelFn2()
-		<-closedServerSignal
+		<-controlServer2.ClosedCh()
 	})
 
-	server2.MessageHandler(control.MessageHandlerFunc(func(ctx context.Context, message control.ServiceMessage) {
+	controlServer2.MessageHandler(control.MessageHandlerFunc(func(ctx context.Context, message control.ServiceMessage) {
 		require.Equal(t, uint8(1), message.Headers().OpCode())
 		require.Equal(t, "Funky!", string(message.Payload()))
 		message.Ack()
@@ -303,7 +304,7 @@ func testTLSConf(t *testing.T, ctx context.Context) (func() (*tls.Config, error)
 	return serverTLSConf, tlsDialer
 }
 
-func mustSetupWithTLS(t *testing.T) (serverCtx context.Context, server control.Service, clientCtx context.Context, client control.Service) {
+func mustSetupWithTLS(t *testing.T) (context.Context, control.Service, context.Context, control.Service) {
 	logger, _ := zap.NewDevelopment()
 	ctx := logging.WithLogger(context.TODO(), logger.Sugar())
 	serverTLSConf, clientTLSDialer := testTLSConf(t, ctx)
@@ -311,42 +312,42 @@ func mustSetupWithTLS(t *testing.T) (serverCtx context.Context, server control.S
 	clientCtx, clientCancelFn := context.WithCancel(ctx)
 	serverCtx, serverCancelFn := context.WithCancel(ctx)
 
-	server, closedServerSignal, err := StartControlServer(serverCtx, serverTLSConf)
+	controlServer, err := StartControlServer(serverCtx, serverTLSConf, WithPort(0))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		serverCancelFn()
-		<-closedServerSignal
+		<-controlServer.ClosedCh()
 	})
 
-	client, err = StartControlClient(clientCtx, clientTLSDialer, "127.0.0.1")
+	client, err := StartControlClient(clientCtx, clientTLSDialer, fmt.Sprintf("127.0.0.1:%d", controlServer.ListeningPort()))
 	require.NoError(t, err)
 	t.Cleanup(clientCancelFn)
 
-	return serverCtx, server, clientCtx, client
+	return serverCtx, controlServer, clientCtx, client
 }
 
-func mustSetupInsecure(t *testing.T) (serverCtx context.Context, server control.Service, clientCtx context.Context, client control.Service) {
+func mustSetupInsecure(t *testing.T) (context.Context, control.Service, context.Context, control.Service) {
 	logger, _ := zap.NewDevelopment()
 	ctx := logging.WithLogger(context.TODO(), logger.Sugar())
 
 	clientCtx, clientCancelFn := context.WithCancel(ctx)
 	serverCtx, serverCancelFn := context.WithCancel(ctx)
 
-	server, closedServerSignal, err := StartInsecureControlServer(serverCtx)
+	controlServer, err := StartInsecureControlServer(serverCtx, WithPort(0))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		serverCancelFn()
-		<-closedServerSignal
+		<-controlServer.ClosedCh()
 	})
 
-	client, err = StartControlClient(clientCtx, &net.Dialer{
+	client, err := StartControlClient(clientCtx, &net.Dialer{
 		KeepAlive: keepAlive,
 		Deadline:  time.Time{},
-	}, "127.0.0.1")
+	}, fmt.Sprintf("127.0.0.1:%d", controlServer.ListeningPort()))
 	require.NoError(t, err)
 	t.Cleanup(clientCancelFn)
 
-	return serverCtx, server, clientCtx, client
+	return serverCtx, controlServer, clientCtx, client
 }
 
 func runSendReceiveTest(t *testing.T, sender control.Service, receiver control.Service) {
