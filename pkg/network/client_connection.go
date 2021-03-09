@@ -124,10 +124,7 @@ func (t *clientTcpConnection) startPolling(initialConn net.Conn) {
 	go func() {
 		<-stoppedConsumingCtx.Done()
 		t.logger.Infof("Closing control client")
-		err := t.close()
+		t.close()
 		t.logger.Infof("Connection closed")
-		if err != nil {
-			t.logger.Warnf("Error while closing the connection: %s", err)
-		}
 	}()
 }

@@ -206,10 +206,7 @@ func (t *serverTcpConnection) startAcceptPolling(closedServerChannel chan struct
 		if err != nil {
 			t.logger.Warnf("Error while closing the listener: %s", err)
 		}
-		err = t.close()
-		if err != nil {
-			t.logger.Warnf("Error while closing the tcp connection: %s", err)
-		}
+		t.close()
 		close(closedServerChannel)
 	}()
 }
