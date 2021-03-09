@@ -130,21 +130,19 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 		for {
 			// Blocking read
 			err := t.read()
-			if err != nil {
-				if isEOF(err) {
-					return // Closed conn
-				}
-				t.tryPropagateError(closedConnCtx, err)
-				if !isTransientError(err) {
-					return // Broken conn
-				}
-			}
-
 			select {
 			case <-closedConnCtx.Done():
 				return
 			default:
-				continue
+				if err != nil {
+					if isEOF(err) {
+						return // Closed conn
+					}
+					t.tryPropagateError(closedConnCtx, err)
+					if !isTransientError(err) {
+						return // Broken conn
+					}
+				}
 			}
 		}
 	}()
@@ -161,13 +159,19 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 }
 
 func (t *baseTcpConnection) tryPropagateError(ctx context.Context, err error) {
-	if ctx.Err() == nil {
+	select {
+	case <-ctx.Done():
+		return
+	default:
 		t.errors <- err
 	}
 }
 
 func (t *baseTcpConnection) tryPushOutboundChannel(ctx context.Context, msg *ctrl.OutboundMessage) {
-	if ctx.Err() == nil {
+	select {
+	case <-ctx.Done():
+		return
+	default:
 		t.outboundMessageChannel <- msg
 	}
 }
