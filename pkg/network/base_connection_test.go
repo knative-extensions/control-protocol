@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -111,7 +112,53 @@ func TestBaseTcpConnection_ConsumeConnection_ReturnsAfterContextClosed(t *testin
 	require.True(t, conn.closeInvoked.Load())
 }
 
+func TestBaseTcpConnection_ConsumeConnection_BrokenConnectionDoesntLoseOutboundMessage(t *testing.T) {
+	ctx, cancelFn := context.WithCancel(context.TODO())
+	logger, _ := zap.NewDevelopment()
+
+	conn := &mockConn{
+		readReturn:   make(chan interface{}, 10),
+		writeReturn:  make(chan interface{}),
+		closeInvoked: atomic.NewBool(false),
+	}
+
+	tcpConn := &baseTcpConnection{
+		ctx:                    ctx,
+		logger:                 logger.Sugar(),
+		outboundMessageChannel: make(chan *ctrl.OutboundMessage, 10),
+		inboundMessageChannel:  make(chan *ctrl.InboundMessage, 10),
+		errors:                 make(chan error, 10),
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	msg := ctrl.NewOutboundMessage(10, nil)
+
+	go func() {
+		// This one should block
+		tcpConn.consumeConnection(conn)
+		wg.Done()
+	}()
+	go func() {
+		// Let's have some fun here and fail the writes
+		tcpConn.outboundMessageChannel <- &msg
+		// This blocks while waiting for writeReturn to be read
+		conn.writeReturn <- errors.New("something broke while writing")
+
+		msgInTheCh := <-tcpConn.outboundMessageChannel
+		assert.Same(t, &msg, msgInTheCh)
+
+		// Close the conn
+		cancelFn()
+		wg.Done()
+	}()
+
+	wg.Wait()
+}
+
 type mockConn struct {
+	writeReturn  chan interface{}
 	readReturn   chan interface{}
 	closeInvoked *atomic.Bool
 }
@@ -126,7 +173,12 @@ func (m *mockConn) Read(b []byte) (n int, err error) {
 }
 
 func (m *mockConn) Write(b []byte) (n int, err error) {
-	return len(b), nil
+	val := <-m.writeReturn
+	if err, ok := val.(error); ok {
+		return 0, err
+	} else {
+		return len(b), nil
+	}
 }
 
 func (m *mockConn) Close() error {

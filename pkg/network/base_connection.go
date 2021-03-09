@@ -130,6 +130,8 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 				}
 				err := t.write(msg)
 				if err != nil {
+					t.pushOutboundChannel(msg)
+
 					if isEOF(err) {
 						return // Closed conn
 					}
@@ -137,9 +139,6 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 					if !isTransientError(err) {
 						return // Broken conn
 					}
-
-					// Try to send to outboundMessageChannel if context not closed
-					t.pushOutboundChannel(msg)
 				}
 			}
 		}
