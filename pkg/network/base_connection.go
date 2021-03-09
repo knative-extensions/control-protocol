@@ -161,19 +161,13 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 }
 
 func (t *baseTcpConnection) tryPropagateError(ctx context.Context, err error) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
+	if ctx.Err() == nil {
 		t.errors <- err
 	}
 }
 
 func (t *baseTcpConnection) tryPushOutboundChannel(ctx context.Context, msg *ctrl.OutboundMessage) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
+	if ctx.Err() == nil {
 		t.outboundMessageChannel <- msg
 	}
 }
