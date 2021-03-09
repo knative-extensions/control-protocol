@@ -164,10 +164,13 @@ func newServerTcpConnection(ctx context.Context, listener net.Listener, loader f
 }
 
 func (t *serverTcpConnection) startAcceptPolling(closedServerChannel chan struct{}) {
+	stoppedConsumingCtx, stoppedConsumingFn := context.WithCancel(context.TODO())
+
 	// We have 2 goroutines:
-	// * One polls the listener to accept new conns
-	// * One blocks on context done and closes the listener and the connection
+	// * One polls the listener to accept new conns. When done, it cancels stoppedConsumingCtx
+	// * One blocks on stoppedConsumingCtx done and closes the listener and the connection
 	go func() {
+		defer stoppedConsumingFn()
 		for {
 			conn, err := t.listener.Accept()
 			if err != nil {
@@ -196,7 +199,7 @@ func (t *serverTcpConnection) startAcceptPolling(closedServerChannel chan struct
 		}
 	}()
 	go func() {
-		<-t.ctx.Done()
+		<-stoppedConsumingCtx.Done()
 		t.logger.Infof("Closing control server")
 		err := t.listener.Close()
 		t.logger.Infof("Listener closed")

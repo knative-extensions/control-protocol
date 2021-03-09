@@ -92,10 +92,13 @@ func newClientTcpConnection(ctx context.Context, dialer Dialer) *clientTcpConnec
 }
 
 func (t *clientTcpConnection) startPolling(initialConn net.Conn) {
+	stoppedConsumingCtx, stoppedConsumingFn := context.WithCancel(context.TODO())
+
 	// We have 2 goroutines:
-	// * One consumes the connections and it eventually reconnects
-	// * One blocks on context done and closes the connection
+	// * One consumes the connections and it eventually reconnects. When done, it cancels stoppedConsumingCtx
+	// * One blocks on stoppedConsumingCtx done and closes the connection
 	go func(initialConn net.Conn) {
+		defer stoppedConsumingFn()
 		// Consume the connection
 		t.consumeConnection(initialConn)
 
@@ -119,7 +122,7 @@ func (t *clientTcpConnection) startPolling(initialConn net.Conn) {
 		}
 	}(initialConn)
 	go func() {
-		<-t.ctx.Done()
+		<-stoppedConsumingCtx.Done()
 		t.logger.Infof("Closing control client")
 		err := t.close()
 		t.logger.Infof("Connection closed")
