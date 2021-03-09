@@ -182,7 +182,7 @@ func (t *serverTcpConnection) startAcceptPolling(closedServerChannel chan struct
 				tlsConf, err := t.tlsConfigLoader()
 				if err != nil {
 					t.logger.Warnf("Cannot load tls configuration: %v", err)
-					t.tryPropagateError(err)
+					t.pushError(err)
 					_ = conn.Close()
 					continue
 				}

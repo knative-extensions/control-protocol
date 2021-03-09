@@ -115,13 +115,13 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 					if isEOF(err) {
 						return // Closed conn
 					}
-					t.tryPropagateError(err)
+					t.pushError(err)
 					if !isTransientError(err) {
 						return // Broken conn
 					}
 
 					// Try to send to outboundMessageChannel if context not closed
-					t.tryPushOutboundChannel(msg)
+					t.pushOutboundChannel(msg)
 				}
 			}
 		}
@@ -142,7 +142,7 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 					if isEOF(err) {
 						return // Closed conn
 					}
-					t.tryPropagateError(err)
+					t.pushError(err)
 					if !isTransientError(err) {
 						return // Broken conn
 					}
@@ -162,22 +162,12 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 	}
 }
 
-func (t *baseTcpConnection) tryPropagateError(err error) {
-	select {
-	case <-t.ctx.Done():
-		return
-	default:
-		t.errors <- err
-	}
+func (t *baseTcpConnection) pushError(err error) {
+	t.errors <- err
 }
 
-func (t *baseTcpConnection) tryPushOutboundChannel(msg *ctrl.OutboundMessage) {
-	select {
-	case <-t.ctx.Done():
-		return
-	default:
-		t.outboundMessageChannel <- msg
-	}
+func (t *baseTcpConnection) pushOutboundChannel(msg *ctrl.OutboundMessage) {
+	t.outboundMessageChannel <- msg
 }
 
 func (t *baseTcpConnection) close() (err error) {
