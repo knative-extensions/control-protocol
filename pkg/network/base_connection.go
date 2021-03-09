@@ -89,7 +89,7 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 	t.conn = conn
 	t.connMutex.Unlock()
 
-	closedConnCtx, closedConnCancel := context.WithCancel(t.ctx)
+	closedConnCtx, closedConnCancel := context.WithCancel(context.TODO())
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -101,6 +101,10 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 		defer wg.Done()
 		for {
 			select {
+			case <-closedConnCtx.Done():
+				return
+			case <-t.ctx.Done():
+				return
 			case msg, ok := <-t.outboundMessageChannel:
 				if !ok {
 					t.logger.Debugf("Outbound channel closed, closing the polling")
@@ -111,16 +115,14 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 					if isEOF(err) {
 						return // Closed conn
 					}
-					t.tryPropagateError(closedConnCtx, err)
+					t.tryPropagateError(err)
 					if !isTransientError(err) {
 						return // Broken conn
 					}
 
 					// Try to send to outboundMessageChannel if context not closed
-					t.tryPushOutboundChannel(closedConnCtx, msg)
+					t.tryPushOutboundChannel(msg)
 				}
-			case <-closedConnCtx.Done():
-				return
 			}
 		}
 	}()
@@ -130,21 +132,21 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 		for {
 			// Blocking read
 			err := t.read()
-			if err != nil {
-				if isEOF(err) {
-					return // Closed conn
-				}
-				t.tryPropagateError(closedConnCtx, err)
-				if !isTransientError(err) {
-					return // Broken conn
-				}
-			}
-
 			select {
 			case <-closedConnCtx.Done():
 				return
+			case <-t.ctx.Done():
+				return
 			default:
-				continue
+				if err != nil {
+					if isEOF(err) {
+						return // Closed conn
+					}
+					t.tryPropagateError(err)
+					if !isTransientError(err) {
+						return // Broken conn
+					}
+				}
 			}
 		}
 	}()
@@ -160,18 +162,18 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 	}
 }
 
-func (t *baseTcpConnection) tryPropagateError(ctx context.Context, err error) {
+func (t *baseTcpConnection) tryPropagateError(err error) {
 	select {
-	case <-ctx.Done():
+	case <-t.ctx.Done():
 		return
 	default:
 		t.errors <- err
 	}
 }
 
-func (t *baseTcpConnection) tryPushOutboundChannel(ctx context.Context, msg *ctrl.OutboundMessage) {
+func (t *baseTcpConnection) tryPushOutboundChannel(msg *ctrl.OutboundMessage) {
 	select {
-	case <-ctx.Done():
+	case <-t.ctx.Done():
 		return
 	default:
 		t.outboundMessageChannel <- msg
