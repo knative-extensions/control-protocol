@@ -202,7 +202,7 @@ func (t *serverTcpConnection) listenLoop() {
 				tlsConf, err := t.tlsConfigLoader()
 				if err != nil {
 					t.logger.Warnf("Cannot load tls configuration: %v", err)
-					t.pushError(err)
+					t.errors <- err
 					_ = conn.Close()
 					continue
 				}

@@ -118,12 +118,12 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 				}
 				err := t.write(conn, msg)
 				if err != nil {
-					t.pushOutboundChannel(msg)
+					t.outboundMessageChannel <- msg
 
 					if isEOF(err) {
 						return // Closed conn
 					}
-					t.pushError(err)
+					t.errors <- err
 					if !isTransientError(err) {
 						return // Broken conn
 					}
@@ -149,7 +149,7 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 					if isEOF(err) {
 						return // Closed conn
 					}
-					t.pushError(err)
+					t.errors <- err
 					if !isTransientError(err) {
 						return // Broken conn
 					}
@@ -161,14 +161,6 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 	wg.Wait()
 
 	t.logger.Debugf("Stopped consuming connection with local %s and remote %s", conn.LocalAddr().String(), conn.RemoteAddr().String())
-}
-
-func (t *baseTcpConnection) pushError(err error) {
-	t.errors <- err
-}
-
-func (t *baseTcpConnection) pushOutboundChannel(msg *ctrl.OutboundMessage) {
-	t.outboundMessageChannel <- msg
 }
 
 func (t *baseTcpConnection) close() {
