@@ -34,9 +34,6 @@ type baseTcpConnection struct {
 	ctx    context.Context
 	logger *zap.SugaredLogger
 
-	conn      net.Conn
-	connMutex sync.RWMutex
-
 	outboundMessageChannel chan *ctrl.OutboundMessage
 	inboundMessageChannel  chan *ctrl.InboundMessage
 	errors                 chan error
@@ -54,11 +51,9 @@ func (t *baseTcpConnection) Errors() <-chan error {
 	return t.errors
 }
 
-func (t *baseTcpConnection) read() error {
+func (t *baseTcpConnection) read(conn net.Conn) error {
 	msg := &ctrl.InboundMessage{}
-	t.connMutex.RLock()
-	n, err := msg.ReadFrom(t.conn)
-	t.connMutex.RUnlock()
+	n, err := msg.ReadFrom(conn)
 	if err != nil {
 		return err
 	}
@@ -70,10 +65,8 @@ func (t *baseTcpConnection) read() error {
 	return nil
 }
 
-func (t *baseTcpConnection) write(msg *ctrl.OutboundMessage) error {
-	t.connMutex.RLock()
-	n, err := msg.WriteTo(t.conn)
-	t.connMutex.RUnlock()
+func (t *baseTcpConnection) write(conn net.Conn, msg *ctrl.OutboundMessage) error {
+	n, err := msg.WriteTo(conn)
 	if err != nil {
 		return err
 	}
@@ -84,10 +77,7 @@ func (t *baseTcpConnection) write(msg *ctrl.OutboundMessage) error {
 }
 
 func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
-	t.logger.Infof("Setting new conn: %s", conn.RemoteAddr())
-	t.connMutex.Lock()
-	t.conn = conn
-	t.connMutex.Unlock()
+	t.logger.Infof("Started consuming new conn: %s", conn.RemoteAddr())
 
 	closedConnCtx, closedConnCancel := context.WithCancel(context.TODO())
 
@@ -107,9 +97,7 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 		case <-t.ctx.Done():
 			break
 		}
-		t.connMutex.RLock()
-		err := t.conn.Close()
-		t.connMutex.RUnlock()
+		err := conn.Close()
 		if err != nil && !isEOF(err) && !isUseOfClosedConnection(err) {
 			t.logger.Warnf("Error while closing the connection with local %s and remote %s: %s", conn.LocalAddr().String(), conn.RemoteAddr().String(), err)
 		}
@@ -128,7 +116,7 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 					t.logger.Debugf("Outbound channel closed, closing the polling")
 					return
 				}
-				err := t.write(msg)
+				err := t.write(conn, msg)
 				if err != nil {
 					t.pushOutboundChannel(msg)
 
@@ -150,7 +138,7 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 		defer closedConnCancel()
 		for {
 			// Blocking read
-			err := t.read()
+			err := t.read(conn)
 			select {
 			case <-closedConnCtx.Done():
 				return

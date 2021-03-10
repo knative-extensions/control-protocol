@@ -164,12 +164,9 @@ func newServerTcpConnection(ctx context.Context, listener net.Listener, loader f
 }
 
 func (t *serverTcpConnection) startAcceptPolling(closedServerChannel chan struct{}) {
-	stoppedConsumingCtx, stoppedConsumingFn := context.WithCancel(context.TODO())
-
-	// We have 3 goroutines:
+	// We have 2 goroutines:
 	// * One pools the t.ctx and closes the listener
-	// * One polls the listener to accept new conns. When done, it cancels stoppedConsumingCtx
-	// * One blocks on stoppedConsumingCtx done and closes the connection channels
+	// * One polls the listener to accept new conns. When done, it closes the connection channels
 	go func() {
 		<-t.ctx.Done()
 		t.logger.Infof("Closing control server")
@@ -180,8 +177,21 @@ func (t *serverTcpConnection) startAcceptPolling(closedServerChannel chan struct
 		}
 	}()
 	go func() {
-		defer stoppedConsumingFn()
-		for {
+		// This returns when either the listener is closed by external signal
+		// or catastrophic failure happened. In both cases, we want to close
+		t.listenLoop()
+
+		t.close()
+		close(closedServerChannel)
+	}()
+}
+
+func (t *serverTcpConnection) listenLoop() {
+	for {
+		select {
+		case <-t.ctx.Done():
+			return
+		default:
 			conn, err := t.listener.Accept()
 			if err != nil {
 				t.logger.Warnf("Error while accepting the connection, closing the accept loop: %s", err)
@@ -200,17 +210,6 @@ func (t *serverTcpConnection) startAcceptPolling(closedServerChannel chan struct
 			}
 			t.logger.Debugf("Accepting new control connection from %s", conn.RemoteAddr())
 			t.consumeConnection(conn)
-			select {
-			case <-t.ctx.Done():
-				return
-			default:
-				continue
-			}
 		}
-	}()
-	go func() {
-		<-stoppedConsumingCtx.Done()
-		t.close()
-		close(closedServerChannel)
-	}()
+	}
 }
