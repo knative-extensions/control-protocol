@@ -34,9 +34,6 @@ type baseTcpConnection struct {
 	ctx    context.Context
 	logger *zap.SugaredLogger
 
-	conn      net.Conn
-	connMutex sync.RWMutex
-
 	outboundMessageChannel chan *ctrl.OutboundMessage
 	inboundMessageChannel  chan *ctrl.InboundMessage
 	errors                 chan error
@@ -54,11 +51,9 @@ func (t *baseTcpConnection) Errors() <-chan error {
 	return t.errors
 }
 
-func (t *baseTcpConnection) read() error {
+func (t *baseTcpConnection) read(conn net.Conn) error {
 	msg := &ctrl.InboundMessage{}
-	t.connMutex.RLock()
-	n, err := msg.ReadFrom(t.conn)
-	t.connMutex.RUnlock()
+	n, err := msg.ReadFrom(conn)
 	if err != nil {
 		return err
 	}
@@ -70,10 +65,8 @@ func (t *baseTcpConnection) read() error {
 	return nil
 }
 
-func (t *baseTcpConnection) write(msg *ctrl.OutboundMessage) error {
-	t.connMutex.RLock()
-	n, err := msg.WriteTo(t.conn)
-	t.connMutex.RUnlock()
+func (t *baseTcpConnection) write(conn net.Conn, msg *ctrl.OutboundMessage) error {
+	n, err := msg.WriteTo(conn)
 	if err != nil {
 		return err
 	}
@@ -84,19 +77,32 @@ func (t *baseTcpConnection) write(msg *ctrl.OutboundMessage) error {
 }
 
 func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
-	t.logger.Infof("Setting new conn: %s", conn.RemoteAddr())
-	t.connMutex.Lock()
-	t.conn = conn
-	t.connMutex.Unlock()
+	t.logger.Infof("Started consuming new conn: %s", conn.RemoteAddr())
 
 	closedConnCtx, closedConnCancel := context.WithCancel(context.TODO())
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 
-	// We have 2 polling loops:
+	// We have 3 polling loops:
+	// * One polls the 2 contexts and, if one of them is done, it closes the connection, in order to close the other goroutines
 	// * One polls outbound messages and writes to the conn
 	// * One reads from the conn and push to inbound messages
+	go func() {
+		defer wg.Done()
+		// Wait for one of the two to complete
+		select {
+		case <-closedConnCtx.Done():
+			break
+		case <-t.ctx.Done():
+			break
+		}
+		err := conn.Close()
+		if err != nil && !isEOF(err) && !isUseOfClosedConnection(err) {
+			t.logger.Warnf("Error while closing the connection with local %s and remote %s: %s", conn.LocalAddr().String(), conn.RemoteAddr().String(), err)
+		}
+		t.logger.Debugf("Connection closed with local %s and remote %s", conn.LocalAddr().String(), conn.RemoteAddr().String())
+	}()
 	go func() {
 		defer wg.Done()
 		for {
@@ -110,28 +116,29 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 					t.logger.Debugf("Outbound channel closed, closing the polling")
 					return
 				}
-				err := t.write(msg)
+				err := t.write(conn, msg)
 				if err != nil {
+					t.outboundMessageChannel <- msg
+
 					if isEOF(err) {
 						return // Closed conn
 					}
-					t.tryPropagateError(err)
+					t.errors <- err
 					if !isTransientError(err) {
 						return // Broken conn
 					}
-
-					// Try to send to outboundMessageChannel if context not closed
-					t.tryPushOutboundChannel(msg)
 				}
 			}
 		}
 	}()
 	go func() {
 		defer wg.Done()
+		// If this goroutine returns, either the connection closed correctly from t.ctx, or the
+		// connection broke
 		defer closedConnCancel()
 		for {
 			// Blocking read
-			err := t.read()
+			err := t.read(conn)
 			select {
 			case <-closedConnCtx.Done():
 				return
@@ -142,7 +149,7 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 					if isEOF(err) {
 						return // Closed conn
 					}
-					t.tryPropagateError(err)
+					t.errors <- err
 					if !isTransientError(err) {
 						return // Broken conn
 					}
@@ -154,45 +161,12 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 	wg.Wait()
 
 	t.logger.Debugf("Stopped consuming connection with local %s and remote %s", conn.LocalAddr().String(), conn.RemoteAddr().String())
-	t.connMutex.RLock()
-	err := t.conn.Close()
-	t.connMutex.RUnlock()
-	if err != nil && !isEOF(err) && !isUseOfClosedConnection(err) {
-		t.logger.Warnf("Error while closing the previous connection: %s", err)
-	}
 }
 
-func (t *baseTcpConnection) tryPropagateError(err error) {
-	select {
-	case <-t.ctx.Done():
-		return
-	default:
-		t.errors <- err
-	}
-}
-
-func (t *baseTcpConnection) tryPushOutboundChannel(msg *ctrl.OutboundMessage) {
-	select {
-	case <-t.ctx.Done():
-		return
-	default:
-		t.outboundMessageChannel <- msg
-	}
-}
-
-func (t *baseTcpConnection) close() (err error) {
-	t.connMutex.RLock()
-	if t.conn != nil {
-		err = t.conn.Close()
-	}
-	t.connMutex.RUnlock()
+func (t *baseTcpConnection) close() {
 	close(t.inboundMessageChannel)
 	close(t.outboundMessageChannel)
 	close(t.errors)
-	if err == nil || isEOF(err) || isUseOfClosedConnection(err) {
-		return nil
-	}
-	return err
 }
 
 func isTransientError(err error) bool {
