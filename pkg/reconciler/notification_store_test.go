@@ -121,7 +121,7 @@ func setupNotificationStoreIntegrationTest(t *testing.T, merger reconciler.Value
 		enqueueKeyInvoked.Inc()
 	}, test.ParseMockMessage)
 
-	dataPlane.MessageHandler(notificationsStore.ControlMessageHandler(expectedNamespacedName, expectedPodIp, merger))
+	dataPlane.MessageHandler(notificationsStore.MessageHandler(expectedNamespacedName, expectedPodIp, merger))
 
 	return controlPlane, enqueueKeyInvoked, notificationsStore, expectedNamespacedName, expectedPodIp
 }
