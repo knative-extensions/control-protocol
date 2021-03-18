@@ -68,7 +68,30 @@ func TestReconcileConnections(t *testing.T) {
 			require.NotContains(t, conns, address)
 			require.Equal(t, int32(0), newServiceInvokedCounter.Load())
 			require.Equal(t, int32(1), oldServiceInvokedCounter.Load())
+		})
+	}
+}
 
+func TestReconcileConnections_ResolveAndRemove(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	ctx := logging.WithLogger(context.TODO(), logger.Sugar())
+
+	for name, setupFn := range test.ConnectionPoolTestCases() {
+		t.Run(name, func(t *testing.T) {
+			server, connectionPool := setupFn(t, ctx)
+			address := fmt.Sprintf("127.0.0.1:%d", server.ListeningPort())
+
+			conns, err := connectionPool.ReconcileConnections(context.TODO(), "hello", []string{address}, nil, nil)
+			require.NoError(t, err)
+			require.Contains(t, conns, address)
+
+			_, resolvedConn := connectionPool.ResolveControlInterface("hello", address)
+			require.Same(t, conns[address], resolvedConn)
+
+			connectionPool.RemoveAllConnections(ctx, "hello")
+
+			_, resolvedConn = connectionPool.ResolveControlInterface("hello", address)
+			require.Nil(t, resolvedConn)
 		})
 	}
 }
