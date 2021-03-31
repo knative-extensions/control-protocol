@@ -108,11 +108,39 @@ func TestNotificationStore_Integration_ClearMessages(t *testing.T) {
 	require.Nil(t, stored)
 }
 
+func TestNotificationStore_Integration_MergerReturnsNil(t *testing.T) {
+	sender, _, notificationsStore, expectedNamespacedName, expectedPodIp := setupNotificationStoreIntegrationTest(t, func(old interface{}, new interface{}) interface{} {
+		if old != nil {
+			return nil // Remove if there is already something
+		}
+		return new
+	})
+
+	require.NoError(t, sender.SendAndWaitForAck(1, test.MockPayload("Funky!")))
+	stored, ok := notificationsStore.GetPodNotification(expectedNamespacedName, expectedPodIp)
+	require.True(t, ok)
+	value := stored.(*test.MockPayload)
+	require.Equal(t, "Funky!", string(*value))
+
+	// Sending again will trigger the removal
+	require.NoError(t, sender.SendAndWaitForAck(1, test.MockPayload("Funky_2!")))
+	stored, ok = notificationsStore.GetPodsNotifications(expectedNamespacedName)
+	require.False(t, ok)
+	require.Nil(t, stored)
+
+	// Sending again will now store again
+	require.NoError(t, sender.SendAndWaitForAck(1, test.MockPayload("Funky!")))
+	stored, ok = notificationsStore.GetPodNotification(expectedNamespacedName, expectedPodIp)
+	require.True(t, ok)
+	value = stored.(*test.MockPayload)
+	require.Equal(t, "Funky!", string(*value))
+}
+
 func setupNotificationStoreIntegrationTest(t *testing.T, merger reconciler.ValueMerger) (control.Service, *atomic.Int32, *reconciler.NotificationStore, types.NamespacedName, string) {
 	expectedNamespacedName := types.NamespacedName{Namespace: "hello", Name: "world"}
 	expectedPodIp := "127.0.0.1"
 
-	_, dataPlane, _, controlPlane := test.MustSetupInsecureControlPair(t)
+	_, receiver, _, sender := test.MustSetupInsecureControlPair(t)
 
 	enqueueKeyInvoked := atomic.NewInt32(0)
 
@@ -121,7 +149,7 @@ func setupNotificationStoreIntegrationTest(t *testing.T, merger reconciler.Value
 		enqueueKeyInvoked.Inc()
 	}, test.ParseMockMessage)
 
-	dataPlane.MessageHandler(notificationsStore.MessageHandler(expectedNamespacedName, expectedPodIp, merger))
+	receiver.MessageHandler(notificationsStore.MessageHandler(expectedNamespacedName, expectedPodIp, merger))
 
-	return controlPlane, enqueueKeyInvoked, notificationsStore, expectedNamespacedName, expectedPodIp
+	return sender, enqueueKeyInvoked, notificationsStore, expectedNamespacedName, expectedPodIp
 }
