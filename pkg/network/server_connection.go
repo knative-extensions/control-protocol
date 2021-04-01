@@ -114,7 +114,7 @@ type serverTcpConnection struct {
 	tlsConfigLoader func() (*tls.Config, error)
 }
 
-func newServerTcpConnection(ctx context.Context, listener net.Listener, loader func() (*tls.Config, error)) *serverTcpConnection {
+func newServerTcpConnection(ctx context.Context, listener net.Listener, tlsConfigLoader func() (*tls.Config, error)) *serverTcpConnection {
 	c := &serverTcpConnection{
 		baseTcpConnection: baseTcpConnection{
 			ctx:                    ctx,
@@ -124,7 +124,7 @@ func newServerTcpConnection(ctx context.Context, listener net.Listener, loader f
 			errors:                 make(chan error, 10),
 		},
 		listener:        listener,
-		tlsConfigLoader: loader,
+		tlsConfigLoader: tlsConfigLoader,
 	}
 	return c
 }
