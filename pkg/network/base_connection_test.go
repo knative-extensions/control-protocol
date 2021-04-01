@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
@@ -44,8 +45,8 @@ func TestBaseTcpConnection_ConsumeConnection_ReturnsAfterConnectionFailure(t *te
 	tcpConn := &baseTcpConnection{
 		ctx:                    ctx,
 		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.OutboundMessage, 10),
-		inboundMessageChannel:  make(chan *ctrl.InboundMessage, 10),
+		outboundMessageChannel: make(chan *ctrl.Message, 10),
+		inboundMessageChannel:  make(chan *ctrl.Message, 10),
 		errors:                 make(chan error, 10),
 	}
 
@@ -85,8 +86,8 @@ func TestBaseTcpConnection_ConsumeConnection_ReturnsAfterContextClosed(t *testin
 	tcpConn := &baseTcpConnection{
 		ctx:                    ctx,
 		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.OutboundMessage, 10),
-		inboundMessageChannel:  make(chan *ctrl.InboundMessage, 10),
+		outboundMessageChannel: make(chan *ctrl.Message, 10),
+		inboundMessageChannel:  make(chan *ctrl.Message, 10),
 		errors:                 make(chan error, 10),
 	}
 
@@ -125,15 +126,15 @@ func TestBaseTcpConnection_ConsumeConnection_BrokenConnectionDoesntLoseOutboundM
 	tcpConn := &baseTcpConnection{
 		ctx:                    ctx,
 		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.OutboundMessage, 10),
-		inboundMessageChannel:  make(chan *ctrl.InboundMessage, 10),
+		outboundMessageChannel: make(chan *ctrl.Message, 10),
+		inboundMessageChannel:  make(chan *ctrl.Message, 10),
 		errors:                 make(chan error, 10),
 	}
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	msg := ctrl.NewOutboundMessage(10, nil)
+	msg := ctrl.NewMessage(uuid.New(), 10, nil)
 
 	go func() {
 		// This one should block

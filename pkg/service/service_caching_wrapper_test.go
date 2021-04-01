@@ -50,7 +50,7 @@ func TestCachingService(t *testing.T) {
 	require.Equal(t, uint8(10), outboundMessage.OpCode())
 	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessage.Length())
 
-	inboundMessage := control.NewInboundMessage(control.ActualProtocolVersion, 0, uint8(control.AckOpCode), outboundMessage.UUID(), nil)
+	inboundMessage := control.NewMessage(outboundMessage.UUID(), uint8(control.AckOpCode), nil)
 	mockConnection.InboundCh <- &inboundMessage
 
 	wg.Wait()

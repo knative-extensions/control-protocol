@@ -40,7 +40,7 @@ func TestMessageRouter_HandleServiceMessage_Matching(t *testing.T) {
 		}),
 	})
 
-	inboundMsg := ctrl.NewInboundMessage(ctrl.ActualProtocolVersion, 0, 1, uuid.New(), nil)
+	inboundMsg := ctrl.NewMessage(uuid.New(), 1, nil, ctrl.WithFlags(0), ctrl.WithVersion(ctrl.ActualProtocolVersion))
 	require.False(t, svc.InvokeMessageHandler(context.TODO(), &inboundMsg))
 	require.Equal(t, int32(1), counter.Load())
 }
@@ -56,7 +56,7 @@ func TestMessageRouter_HandleServiceMessage_NotMatching(t *testing.T) {
 		}),
 	})
 
-	inboundMsg := ctrl.NewInboundMessage(ctrl.ActualProtocolVersion, 0, 10, uuid.New(), nil)
+	inboundMsg := ctrl.NewMessage(uuid.New(), 10, nil, ctrl.WithFlags(0), ctrl.WithVersion(ctrl.ActualProtocolVersion))
 	require.True(t, svc.InvokeMessageHandler(context.TODO(), &inboundMsg))
 	require.Equal(t, int32(0), counter.Load())
 }
