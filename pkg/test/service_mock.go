@@ -63,7 +63,7 @@ func (s *ServiceMock) ErrorHandler(handler control.ErrorHandler) {
 }
 
 // InvokeMessageHandler invokes the registered message handler and returns true if the message was acked back
-func (s *ServiceMock) InvokeMessageHandler(ctx context.Context, message *control.InboundMessage) bool {
+func (s *ServiceMock) InvokeMessageHandler(ctx context.Context, message *control.Message) bool {
 	acked := atomic.NewBool(false)
 	ackFn := func() {
 		acked.Store(true)

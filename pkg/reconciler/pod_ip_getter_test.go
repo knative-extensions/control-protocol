@@ -89,7 +89,7 @@ func TestPodIpGetter_GetAllPodsIp(t *testing.T) {
 			}
 			got, err := ipGetter.GetAllPodsIp(namespace, labels.Everything())
 			require.NoError(t, err)
-			require.Equal(t, tt.want, got)
+			require.ElementsMatch(t, tt.want, got)
 		})
 	}
 }

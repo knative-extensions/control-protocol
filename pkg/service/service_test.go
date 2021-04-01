@@ -53,7 +53,7 @@ func TestService_SendAndWaitForAck(t *testing.T) {
 	require.Equal(t, uint8(10), outboundMessage.OpCode())
 	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessage.Length())
 
-	inboundMessage := ctrl.NewInboundMessage(ctrl.ActualProtocolVersion, 0, uint8(ctrl.AckOpCode), outboundMessage.UUID(), nil)
+	inboundMessage := ctrl.NewMessage(outboundMessage.UUID(), uint8(ctrl.AckOpCode), nil)
 
 	mockConnection.InboundCh <- &inboundMessage
 
@@ -80,7 +80,7 @@ func TestService_MessageHandler(t *testing.T) {
 	}))
 
 	msgUuid := uuid.New()
-	inboundMessage := ctrl.NewInboundMessage(ctrl.ActualProtocolVersion, 0, uint8(10), msgUuid, []byte(test.SomeMockPayload))
+	inboundMessage := ctrl.NewMessage(msgUuid, uint8(10), []byte(test.SomeMockPayload))
 	mockConnection.InboundCh <- &inboundMessage
 
 	wg.Wait()

@@ -44,8 +44,8 @@ func TestServerTcpConnection_CloseCtxCausesListenerToClose(t *testing.T) {
 		baseTcpConnection: baseTcpConnection{
 			ctx:                    ctx,
 			logger:                 logger.Sugar(),
-			outboundMessageChannel: make(chan *ctrl.OutboundMessage, 10),
-			inboundMessageChannel:  make(chan *ctrl.InboundMessage, 10),
+			outboundMessageChannel: make(chan *ctrl.Message, 10),
+			inboundMessageChannel:  make(chan *ctrl.Message, 10),
 			errors:                 make(chan error, 10),
 		},
 		listener: listener,
