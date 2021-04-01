@@ -19,7 +19,6 @@ package sample
 import (
 	"context"
 
-	"github.com/kelseyhightower/envconfig"
 	"k8s.io/client-go/tools/cache"
 	kubeclient "knative.dev/pkg/client/injection/kube/client"
 	"knative.dev/pkg/client/injection/kube/reconciler/core/v1/secret"
@@ -61,9 +60,6 @@ func NewControllerFactory(componentName string) injection.ControllerConstructor 
 			secretTypeLabelName: labelName,
 
 			logger: logging.FromContext(ctx),
-		}
-		if err := envconfig.Process("", r); err != nil {
-			logging.FromContext(ctx).Panicf("required environment variable is not defined: %v", err)
 		}
 
 		impl := secret.NewImpl(ctx, r)

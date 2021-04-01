@@ -112,53 +112,82 @@ func TestReconcile(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		ctor    injection.ControllerConstructor
-		key     string
-		objects []*corev1.Secret
-		asserts map[types.NamespacedName]func(*corev1.Secret)
+		name                   string
+		key                    string
+		executeReconcilerTwice bool
+		objects                []*corev1.Secret
+		asserts                map[string]func(*testing.T, *corev1.Secret)
 	}{{
 		name:    "well formed secret CA and control plane secret exists",
 		key:     namespace + "/control-plane-ctrl",
-		ctor:    NewControllerFactory("my"),
 		objects: []*corev1.Secret{wellFormedCaSecret, wellFormedControlPlaneSecret},
-		asserts: map[types.NamespacedName]func(*corev1.Secret){
-			{
-				Namespace: namespace,
-				Name:      wellFormedCaSecret.Name,
-			}: func(secret *corev1.Secret) {
+		asserts: map[string]func(*testing.T, *corev1.Secret){
+			wellFormedCaSecret.Name: func(t *testing.T, secret *corev1.Secret) {
 				require.Equal(t, wellFormedCaSecret, secret)
 			},
-			{
-				Namespace: namespace,
-				Name:      wellFormedControlPlaneSecret.Name,
-			}: func(secret *corev1.Secret) {
+			wellFormedControlPlaneSecret.Name: func(t *testing.T, secret *corev1.Secret) {
 				require.Equal(t, wellFormedControlPlaneSecret, secret)
 			},
 		},
 	}, {
 		name:    "well formed secret CA and data plane secret exists",
 		key:     namespace + "/data-plane-ctrl",
-		ctor:    NewControllerFactory("my"),
 		objects: []*corev1.Secret{wellFormedCaSecret, wellFormedDataPlaneSecret},
-		asserts: map[types.NamespacedName]func(*corev1.Secret){
-			{
-				Namespace: namespace,
-				Name:      wellFormedCaSecret.Name,
-			}: func(secret *corev1.Secret) {
+		asserts: map[string]func(*testing.T, *corev1.Secret){
+			wellFormedCaSecret.Name: func(t *testing.T, secret *corev1.Secret) {
 				require.Equal(t, wellFormedCaSecret, secret)
 			},
-			{
-				Namespace: namespace,
-				Name:      wellFormedDataPlaneSecret.Name,
-			}: func(secret *corev1.Secret) {
+			wellFormedDataPlaneSecret.Name: func(t *testing.T, secret *corev1.Secret) {
 				require.Equal(t, wellFormedDataPlaneSecret, secret)
 			},
 		},
 	}, {
+		name:                   "empty CA secret and empty control plane secret",
+		key:                    namespace + "/control-plane-ctrl",
+		executeReconcilerTwice: true,
+		objects: []*corev1.Secret{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      caSecretName,
+				Namespace: namespace,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "control-plane-ctrl",
+				Namespace: namespace,
+				Labels: map[string]string{
+					labelName: controlPlaneSecretType,
+				},
+			},
+		}},
+		asserts: map[string]func(*testing.T, *corev1.Secret){
+			caSecretName:         validCACert,
+			"control-plane-ctrl": validControlPlaneCert,
+		},
+	}, {
+		name:                   "empty CA secret and empty data plane secret",
+		key:                    namespace + "/data-plane-ctrl",
+		executeReconcilerTwice: true,
+		objects: []*corev1.Secret{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      caSecretName,
+				Namespace: namespace,
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "data-plane-ctrl",
+				Namespace: namespace,
+				Labels: map[string]string{
+					labelName: dataPlaneSecretType,
+				},
+			},
+		}},
+		asserts: map[string]func(*testing.T, *corev1.Secret){
+			caSecretName:      validCACert,
+			"data-plane-ctrl": validControlPlaneCert,
+		},
+	}, {
 		name: "well formed secret CA but empty control plane secret",
 		key:  namespace + "/control-plane-ctrl",
-		ctor: NewControllerFactory("my"),
 		objects: []*corev1.Secret{wellFormedCaSecret, {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "control-plane-ctrl",
@@ -168,26 +197,74 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		}},
-		asserts: map[types.NamespacedName]func(*corev1.Secret){
-			{
-				Namespace: namespace,
-				Name:      wellFormedCaSecret.Name,
-			}: func(secret *corev1.Secret) {
+		asserts: map[string]func(*testing.T, *corev1.Secret){
+			wellFormedCaSecret.Name: func(t *testing.T, secret *corev1.Secret) {
 				require.Equal(t, wellFormedCaSecret, secret)
 			},
-			{
-				Namespace: namespace,
-				Name:      "control-plane-ctrl",
-			}: func(secret *corev1.Secret) {
-				require.Contains(t, secret.Data, certificates.SecretCaCertKey)
-				require.Contains(t, secret.Data, certificates.SecretPKKey)
-				require.Contains(t, secret.Data, certificates.SecretCertKey)
-			},
+			"control-plane-ctrl": validControlPlaneCert,
 		},
+	}, {
+		name:                   "malformed secret CA and malformed control plane secret",
+		key:                    namespace + "/control-plane-ctrl",
+		executeReconcilerTwice: true,
+		objects: []*corev1.Secret{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      caSecretName,
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				certificates.SecretCertKey: caKP.CertBytes(),
+			},
+		}, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "control-plane-ctrl",
+				Namespace: namespace,
+				Labels: map[string]string{
+					labelName: controlPlaneSecretType,
+				},
+			},
+			Data: map[string][]byte{
+				certificates.SecretCaCertKey: {1, 2, 3},
+				certificates.SecretCertKey:   {1, 2, 3},
+				certificates.SecretPKKey:     {1, 2, 3},
+			},
+		}},
+		asserts: map[string]func(*testing.T, *corev1.Secret){
+			caSecretName:         validCACert,
+			"control-plane-ctrl": validControlPlaneCert,
+		},
+	}, {
+		name: "well formed secret CA and malformed control plane secret",
+		key:  namespace + "/control-plane-ctrl",
+		objects: []*corev1.Secret{wellFormedCaSecret, {
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "control-plane-ctrl",
+				Namespace: namespace,
+				Labels: map[string]string{
+					labelName: controlPlaneSecretType,
+				},
+			},
+		}},
+		asserts: map[string]func(*testing.T, *corev1.Secret){
+			caSecretName:         validCACert,
+			"control-plane-ctrl": validControlPlaneCert,
+		},
+	}, {
+		name: "no CA secret and empty control plane secret",
+		key:  namespace + "/control-plane-ctrl",
+		objects: []*corev1.Secret{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "control-plane-ctrl",
+				Namespace: namespace,
+				Labels: map[string]string{
+					labelName: controlPlaneSecretType,
+				},
+			},
+		}},
 	}}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx, ctrl := setupTest(t, test.ctor)
+			ctx, ctrl := setupTest(t, NewControllerFactory("my"))
 
 			for _, s := range test.objects {
 				_, err := fakekubeclient.Get(ctx).CoreV1().Secrets(s.Namespace).Create(ctx, s, metav1.CreateOptions{})
@@ -195,12 +272,23 @@ func TestReconcile(t *testing.T) {
 				require.NoError(t, fakesecretinformer.Get(ctx).Informer().GetIndexer().Add(s))
 			}
 
-			require.NoError(t, ctrl.Reconciler.Reconcile(context.Background(), test.key))
+			require.NoError(t, ctrl.Reconciler.Reconcile(ctx, test.key))
+			if test.executeReconcilerTwice {
+				// Update the informers cache
+				secrets, _ := fakekubeclient.Get(ctx).CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
+				for _, s := range secrets.Items {
+					s := (&s).DeepCopy()
+					require.NoError(t, fakesecretinformer.Get(ctx).Informer().GetIndexer().Update(s))
+				}
+				// Reconcile again
+				require.NoError(t, ctrl.Reconciler.Reconcile(ctx, test.key))
+				require.NoError(t, ctrl.Reconciler.Reconcile(ctx, test.key))
+			}
 
 			for name, asserts := range test.asserts {
-				sec, err := fakekubeclient.Get(ctx).CoreV1().Secrets(name.Namespace).Get(ctx, name.Name, metav1.GetOptions{})
+				sec, err := fakekubeclient.Get(ctx).CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 				require.NoError(t, err)
-				asserts(sec)
+				asserts(t, sec)
 			}
 		})
 	}
@@ -225,3 +313,19 @@ func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, 
 	require.NoError(t, err)
 	return kp
 }
+
+func validCACert(t *testing.T, secret *corev1.Secret) {
+	require.Contains(t, secret.Data, certificates.SecretPKKey)
+	require.Contains(t, secret.Data, certificates.SecretCertKey)
+	cert, pk, err := certificates.ParseCert(secret.Data[certificates.SecretCertKey], secret.Data[certificates.SecretPKKey])
+	require.NotNil(t, cert)
+	require.NotNil(t, pk)
+	require.NoError(t, err)
+}
+
+func validDataPlaneCert(t *testing.T, secret *corev1.Secret) {
+	require.Contains(t, secret.Data, certificates.SecretCaCertKey)
+	validCACert(t, secret)
+}
+
+var validControlPlaneCert = validDataPlaneCert
