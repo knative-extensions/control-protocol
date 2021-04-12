@@ -18,11 +18,13 @@ package network_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -93,6 +95,24 @@ func TestServerToClientAndBack(t *testing.T) {
 	require.NoError(t, client.SendAndWaitForAck(2, test.MockPayload("Funky2!")))
 	require.NoError(t, server.SendAndWaitForAck(1, test.MockPayload("Funky!")))
 	require.NoError(t, client.SendAndWaitForAck(2, test.MockPayload("Funky2!")))
+
+	wg.Wait()
+}
+
+func TestServerToClientAndBackWithErrorAck(t *testing.T) {
+	_, server, _, client := test.MustSetupSecureControlPair(t)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	server.MessageHandler(control.MessageHandlerFunc(func(ctx context.Context, message control.ServiceMessage) {
+		assert.Equal(t, uint8(2), message.Headers().OpCode())
+		assert.Equal(t, "Funky!", string(message.Payload()))
+		message.AckWithError(errors.New("abc"))
+		wg.Done()
+	}))
+
+	require.Error(t, client.SendAndWaitForAck(2, test.MockPayload("Funky!")), "abc")
 
 	wg.Wait()
 }
