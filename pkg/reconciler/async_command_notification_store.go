@@ -41,12 +41,8 @@ func NewAsyncCommandNotificationStore(enqueueKey func(name types.NamespacedName)
 	}
 }
 
-func (ns *AsyncCommandNotificationStore) GetInt64CommandResult(srcName types.NamespacedName, pod string, commandId int64) *message.AsyncCommandResult {
-	return ns.GetCommandResult(srcName, pod, message.Int64CommandId(commandId))
-}
-
 // GetCommandResult returns the message.AsyncCommandResult when the notification store contains the command result matching srcName, pod and generation
-func (ns *AsyncCommandNotificationStore) GetCommandResult(srcName types.NamespacedName, pod string, commandId []byte) *message.AsyncCommandResult {
+func (ns *AsyncCommandNotificationStore) GetCommandResult(srcName types.NamespacedName, pod string, command message.AsyncCommand) *message.AsyncCommandResult {
 	val, ok := ns.ns.GetPodNotification(srcName, pod)
 	if !ok {
 		return nil
@@ -54,7 +50,7 @@ func (ns *AsyncCommandNotificationStore) GetCommandResult(srcName types.Namespac
 
 	res := val.(message.AsyncCommandResult)
 
-	if !bytes.Equal(res.CommandId, commandId) {
+	if !bytes.Equal(res.CommandId, command.SerializedId()) {
 		return nil
 	}
 

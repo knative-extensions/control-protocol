@@ -18,13 +18,6 @@ package message
 
 import "encoding/binary"
 
-// Int64CommandId creates a command id from int64
-func Int64CommandId(id int64) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, uint64(id))
-	return b
-}
-
 // AsyncCommandResult is a data structure representing an asynchronous command result.
 // This can be used in use cases where the controller sends a command, which is acked as soon as is received by the data plane,
 // then the data plane performs an eventually long operation, and when this operation is completed this result is sent back to the control plane.

@@ -19,6 +19,7 @@ package service_test
 import (
 	"context"
 	"encoding"
+	"encoding/binary"
 	"errors"
 	"testing"
 
@@ -47,16 +48,40 @@ func (s sentMessagesSvcMock) ErrorHandler(ctrl.ErrorHandler) {
 	panic("this shouldn't be invoked")
 }
 
+type mockAsyncCommand struct {
+	generation int64
+}
+
+func (m *mockAsyncCommand) MarshalBinary() (data []byte, err error) {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(m.generation))
+	return b, nil
+}
+
+func (m *mockAsyncCommand) UnmarshalBinary(data []byte) error {
+	m.generation = int64(binary.BigEndian.Uint64(data))
+	return nil
+}
+
+func (m *mockAsyncCommand) SerializedId() []byte {
+	return message.Int64CommandId(m.generation)
+}
+
 func TestNewAsyncCommandHandler_Success(t *testing.T) {
 	sendingSvc := sentMessagesSvcMock{}
 	receivingSvc := test.NewServiceMock()
 
-	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(func(ctx context.Context, msg ctrl.ServiceMessage) ([]byte, error) {
-		msg.Ack()
-		return message.Int64CommandId(1), nil
-	}, sendingSvc, ctrl.OpCode(2)))
+	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(
+		sendingSvc,
+		&mockAsyncCommand{},
+		ctrl.OpCode(2),
+		func(ctx context.Context, commandMessage service.AsyncCommandMessage) {
+			assert.Equal(t, uint8(1), commandMessage.Headers().OpCode())
+			commandMessage.NotifySuccess()
+		},
+	))
 
-	msg := ctrl.NewMessage(uuid.New(), 1, []byte{0, 1, 2, 3})
+	msg := ctrl.NewMessage(uuid.New(), 1, []byte{0, 0, 0, 0, 0, 0, 0, 1})
 	assert.True(t, receivingSvc.InvokeMessageHandler(
 		context.TODO(),
 		&msg,
@@ -69,16 +94,46 @@ func TestNewAsyncCommandHandler_Success(t *testing.T) {
 	}, sendingSvc[ctrl.OpCode(2)])
 }
 
-func TestNewAsyncCommandHandler_Error(t *testing.T) {
+func TestNewAsyncCommandHandler_Failed_Nil(t *testing.T) {
 	sendingSvc := sentMessagesSvcMock{}
 	receivingSvc := test.NewServiceMock()
 
-	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(func(ctx context.Context, msg ctrl.ServiceMessage) ([]byte, error) {
-		msg.Ack()
-		return message.Int64CommandId(1), errors.New("failure")
-	}, sendingSvc, ctrl.OpCode(2)))
+	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(
+		sendingSvc,
+		&mockAsyncCommand{},
+		ctrl.OpCode(2),
+		func(ctx context.Context, commandMessage service.AsyncCommandMessage) {
+			commandMessage.NotifyFailed(nil)
+		},
+	))
 
-	msg := ctrl.NewMessage(uuid.New(), 1, []byte{0, 1, 2, 3})
+	msg := ctrl.NewMessage(uuid.New(), 1, []byte{0, 0, 0, 0, 0, 0, 0, 1})
+	assert.True(t, receivingSvc.InvokeMessageHandler(
+		context.TODO(),
+		&msg,
+	))
+
+	require.Contains(t, sendingSvc, ctrl.OpCode(2))
+	require.Equal(t, message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(1),
+		Error:     "",
+	}, sendingSvc[ctrl.OpCode(2)])
+}
+
+func TestNewAsyncCommandHandler_Failed(t *testing.T) {
+	sendingSvc := sentMessagesSvcMock{}
+	receivingSvc := test.NewServiceMock()
+
+	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(
+		sendingSvc,
+		&mockAsyncCommand{},
+		ctrl.OpCode(2),
+		func(ctx context.Context, commandMessage service.AsyncCommandMessage) {
+			commandMessage.NotifyFailed(errors.New("failure"))
+		},
+	))
+
+	msg := ctrl.NewMessage(uuid.New(), 1, []byte{0, 0, 0, 0, 0, 0, 0, 1})
 	assert.True(t, receivingSvc.InvokeMessageHandler(
 		context.TODO(),
 		&msg,
@@ -89,4 +144,38 @@ func TestNewAsyncCommandHandler_Error(t *testing.T) {
 		CommandId: message.Int64CommandId(1),
 		Error:     "failure",
 	}, sendingSvc[ctrl.OpCode(2)])
+}
+
+type mockAsyncCommandWithUnmarshalFailure struct{}
+
+func (m *mockAsyncCommandWithUnmarshalFailure) MarshalBinary() (data []byte, err error) {
+	panic("this shouldn't be called")
+}
+
+func (m *mockAsyncCommandWithUnmarshalFailure) UnmarshalBinary(data []byte) error {
+	return errors.New("unmarshal error")
+}
+
+func (m *mockAsyncCommandWithUnmarshalFailure) SerializedId() []byte {
+	panic("this shouldn't be called")
+}
+
+func TestNewAsyncCommandHandler_BadMessage(t *testing.T) {
+	sendingSvc := sentMessagesSvcMock{}
+	receivingSvc := test.NewServiceMock()
+
+	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(
+		sendingSvc,
+		&mockAsyncCommandWithUnmarshalFailure{},
+		ctrl.OpCode(2),
+		func(ctx context.Context, commandMessage service.AsyncCommandMessage) {
+			commandMessage.NotifyFailed(errors.New("failure"))
+		},
+	))
+
+	msg := ctrl.NewMessage(uuid.New(), 1, []byte{0, 0, 0, 0, 0, 0, 0, 1})
+	assert.Error(t, receivingSvc.InvokeMessageHandlerWithErr(
+		context.TODO(),
+		&msg,
+	), "error while parsing the async commmand: unmarshal error")
 }
