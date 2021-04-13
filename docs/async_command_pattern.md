@@ -23,7 +23,7 @@ note right of "Data plane": Process the command
 "Data plane" -> Controller ++: Send AsyncCommandResult
 
 Controller -> "Data plane": Ack
-note left: Flag the Resource as succeded/failed
+note left: Flag the Resource as succeeded/failed
 deactivate "Data plane"
 
 note over Controller: Continue reconciliation
@@ -48,7 +48,7 @@ dataPlaneService.MessageHandler(service.NewAsyncCommandHandler(
         // This is safe, the handler will take care of parsing
     	var cmd *myAsyncCommand = commandMessage.ParsedCommand().(*myAsyncCommand)
         // Do stuff to process command
-        
+
         // Notify the result:
         command.NotifySuccess()
     	// Or:
@@ -62,7 +62,7 @@ dataPlaneService.MessageHandler(service.NewAsyncCommandHandler(
 ```go
 // Control plane sends the command
 err := controlPlaneService.SendAndWaitForAck(
-	control.OpCode(1), 
+	control.OpCode(1),
 	myCommand
 )
 
@@ -72,7 +72,7 @@ err := controlPlaneService.SendAndWaitForAck(
 commandResult := commandNotificationStore.GetCommandResult(resourceNamespacedName, podIp, myCommand)
 
 if commandResult == nil {
-	// Still no notification: the data plane is still processing the message, 
+	// Still no notification: the data plane is still processing the message,
 	// shortcircuit the controller
 } else if commandResult.IsFailed() {
 	// Command failed
@@ -80,4 +80,3 @@ if commandResult == nil {
 	// Command succeeded
 }
 ```
-
