@@ -45,7 +45,8 @@ dataPlaneService.MessageHandler(service.NewAsyncCommandHandler(
     &myAsyncCommand{}, // The type of the async command
     control.OpCode(2), // The opcode to use when sending the AsyncCommandResult
     func(ctx context.Context, commandMessage service.AsyncCommandMessage) {
-    	var cmd *myAsyncCommand = commandMessage.ParsedCommand().(*myAsyncCommand) // This is safe, the handler will take care of parsing
+        // This is safe, the handler will take care of parsing
+    	var cmd *myAsyncCommand = commandMessage.ParsedCommand().(*myAsyncCommand)
         // Do stuff to process command
         
         // Notify the result:
