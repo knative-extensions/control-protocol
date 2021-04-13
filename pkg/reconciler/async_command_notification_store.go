@@ -22,10 +22,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	control "knative.dev/control-protocol/pkg"
-	"knative.dev/control-protocol/pkg/service"
+	"knative.dev/control-protocol/pkg/message"
 )
 
-// AsyncCommandNotificationStore is a specialized NotificationStore that is capable to handle service.AsyncCommandResult
+// AsyncCommandNotificationStore is a specialized NotificationStore that is capable to handle message.AsyncCommandResult
 type AsyncCommandNotificationStore struct {
 	ns *NotificationStore
 }
@@ -35,24 +35,24 @@ func NewAsyncCommandNotificationStore(enqueueKey func(name types.NamespacedName)
 	return &AsyncCommandNotificationStore{
 		ns: &NotificationStore{
 			enqueueKey:        enqueueKey,
-			payloadParser:     service.ParseAsyncCommandResult,
+			payloadParser:     message.ParseAsyncCommandResult,
 			notificationStore: make(map[types.NamespacedName]map[string]interface{}),
 		},
 	}
 }
 
-func (notificationStore *AsyncCommandNotificationStore) GetInt64CommandResult(srcName types.NamespacedName, pod string, commandId int64) *service.AsyncCommandResult {
-	return notificationStore.GetCommandResult(srcName, pod, service.Int64CommandId(commandId))
+func (ns *AsyncCommandNotificationStore) GetInt64CommandResult(srcName types.NamespacedName, pod string, commandId int64) *message.AsyncCommandResult {
+	return ns.GetCommandResult(srcName, pod, message.Int64CommandId(commandId))
 }
 
-// GetCommandResult returns the service.AsyncCommandResult when the notification store contains the command result matching srcName, pod and generation
-func (notificationStore *AsyncCommandNotificationStore) GetCommandResult(srcName types.NamespacedName, pod string, commandId []byte) *service.AsyncCommandResult {
-	val, ok := notificationStore.ns.GetPodNotification(srcName, pod)
+// GetCommandResult returns the message.AsyncCommandResult when the notification store contains the command result matching srcName, pod and generation
+func (ns *AsyncCommandNotificationStore) GetCommandResult(srcName types.NamespacedName, pod string, commandId []byte) *message.AsyncCommandResult {
+	val, ok := ns.ns.GetPodNotification(srcName, pod)
 	if !ok {
 		return nil
 	}
 
-	res := val.(service.AsyncCommandResult)
+	res := val.(message.AsyncCommandResult)
 
 	if !bytes.Equal(res.CommandId, commandId) {
 		return nil
@@ -62,16 +62,16 @@ func (notificationStore *AsyncCommandNotificationStore) GetCommandResult(srcName
 }
 
 // CleanPodsNotifications is like NotificationStore.CleanPodsNotifications
-func (notificationStore *AsyncCommandNotificationStore) CleanPodsNotifications(srcName types.NamespacedName) {
-	notificationStore.ns.CleanPodsNotifications(srcName)
+func (ns *AsyncCommandNotificationStore) CleanPodsNotifications(srcName types.NamespacedName) {
+	ns.ns.CleanPodsNotifications(srcName)
 }
 
 // CleanPodNotification is like NotificationStore.CleanPodNotification
-func (notificationStore *AsyncCommandNotificationStore) CleanPodNotification(srcName types.NamespacedName, pod string) {
-	notificationStore.ns.CleanPodNotification(srcName, pod)
+func (ns *AsyncCommandNotificationStore) CleanPodNotification(srcName types.NamespacedName, pod string) {
+	ns.ns.CleanPodNotification(srcName, pod)
 }
 
 // MessageHandler is like NotificationStore.MessageHandler
-func (notificationStore *AsyncCommandNotificationStore) MessageHandler(srcName types.NamespacedName, pod string) control.MessageHandler {
-	return notificationStore.ns.MessageHandler(srcName, pod, PassNewValue)
+func (ns *AsyncCommandNotificationStore) MessageHandler(srcName types.NamespacedName, pod string) control.MessageHandler {
+	return ns.ns.MessageHandler(srcName, pod, PassNewValue)
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	ctrl "knative.dev/control-protocol/pkg"
+	"knative.dev/control-protocol/pkg/message"
 	"knative.dev/control-protocol/pkg/service"
 	"knative.dev/control-protocol/pkg/test"
 )
@@ -50,9 +51,9 @@ func TestNewAsyncCommandHandler_Success(t *testing.T) {
 	sendingSvc := sentMessagesSvcMock{}
 	receivingSvc := test.NewServiceMock()
 
-	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(func(ctx context.Context, message ctrl.ServiceMessage) ([]byte, error) {
-		message.Ack()
-		return service.Int64CommandId(1), nil
+	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(func(ctx context.Context, msg ctrl.ServiceMessage) ([]byte, error) {
+		msg.Ack()
+		return message.Int64CommandId(1), nil
 	}, sendingSvc, ctrl.OpCode(2)))
 
 	msg := ctrl.NewMessage(uuid.New(), 1, []byte{0, 1, 2, 3})
@@ -62,8 +63,8 @@ func TestNewAsyncCommandHandler_Success(t *testing.T) {
 	))
 
 	require.Contains(t, sendingSvc, ctrl.OpCode(2))
-	require.Equal(t, service.AsyncCommandResult{
-		CommandId: service.Int64CommandId(1),
+	require.Equal(t, message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(1),
 		Error:     "",
 	}, sendingSvc[ctrl.OpCode(2)])
 }
@@ -72,9 +73,9 @@ func TestNewAsyncCommandHandler_Error(t *testing.T) {
 	sendingSvc := sentMessagesSvcMock{}
 	receivingSvc := test.NewServiceMock()
 
-	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(func(ctx context.Context, message ctrl.ServiceMessage) ([]byte, error) {
-		message.Ack()
-		return service.Int64CommandId(1), errors.New("failure")
+	receivingSvc.MessageHandler(service.NewAsyncCommandHandler(func(ctx context.Context, msg ctrl.ServiceMessage) ([]byte, error) {
+		msg.Ack()
+		return message.Int64CommandId(1), errors.New("failure")
 	}, sendingSvc, ctrl.OpCode(2)))
 
 	msg := ctrl.NewMessage(uuid.New(), 1, []byte{0, 1, 2, 3})
@@ -84,41 +85,8 @@ func TestNewAsyncCommandHandler_Error(t *testing.T) {
 	))
 
 	require.Contains(t, sendingSvc, ctrl.OpCode(2))
-	require.Equal(t, service.AsyncCommandResult{
-		CommandId: service.Int64CommandId(1),
+	require.Equal(t, message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(1),
 		Error:     "failure",
 	}, sendingSvc[ctrl.OpCode(2)])
-}
-
-func TestAsyncCommandResult_RoundTrip(t *testing.T) {
-	testCases := map[string]service.AsyncCommandResult{
-		"positive generation": {
-			CommandId: service.Int64CommandId(1),
-		},
-		"negative generation": {
-			CommandId: service.Int64CommandId(-1),
-		},
-		"with error": {
-			CommandId: service.Int64CommandId(1),
-			Error:     "funky error",
-		},
-	}
-
-	for testName, commandResult := range testCases {
-		t.Run(testName, func(t *testing.T) {
-			marshalled, err := commandResult.MarshalBinary()
-			require.NoError(t, err)
-
-			expectedLength := 4 + len(commandResult.CommandId)
-			if commandResult.IsFailed() {
-				expectedLength = expectedLength + 4 + len(commandResult.Error)
-			}
-			require.Len(t, marshalled, expectedLength)
-
-			have := service.AsyncCommandResult{}
-			require.NoError(t, have.UnmarshalBinary(marshalled))
-
-			require.Equal(t, commandResult, have)
-		})
-	}
 }

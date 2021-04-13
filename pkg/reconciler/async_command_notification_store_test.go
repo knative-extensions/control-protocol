@@ -22,64 +22,65 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"k8s.io/apimachinery/pkg/types"
+
 	control "knative.dev/control-protocol/pkg"
+	"knative.dev/control-protocol/pkg/message"
 	"knative.dev/control-protocol/pkg/reconciler"
-	"knative.dev/control-protocol/pkg/service"
 	"knative.dev/control-protocol/pkg/test"
 )
 
 func TestAsyncCommandNotificationStore_Integration_GetCommandResult(t *testing.T) {
 	controlPlane, enqueueKeyInvoked, notificationsStore, expectedNamespacedName, expectedPodIp := setupAsyncCommandNotificationStoreIntegrationTest(t)
 
-	require.Nil(t, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, service.Int64CommandId(1)))
+	require.Nil(t, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, message.Int64CommandId(1)))
 
-	require.NoError(t, controlPlane.SendAndWaitForAck(1, service.AsyncCommandResult{
-		CommandId: service.Int64CommandId(2),
+	require.NoError(t, controlPlane.SendAndWaitForAck(1, message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(2),
 		Error:     "",
 	}))
 	require.Equal(t, int32(1), enqueueKeyInvoked.Load())
 
 	require.Nil(t, notificationsStore.GetInt64CommandResult(expectedNamespacedName, expectedPodIp, 1))
-	require.Equal(t, &service.AsyncCommandResult{
-		CommandId: service.Int64CommandId(2),
+	require.Equal(t, &message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(2),
 		Error:     "",
-	}, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, service.Int64CommandId(2)))
+	}, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, message.Int64CommandId(2)))
 }
 
 func TestAsyncCommandNotificationStore_Integration_CleanPodNotification(t *testing.T) {
 	controlPlane, enqueueKeyInvoked, notificationsStore, expectedNamespacedName, expectedPodIp := setupAsyncCommandNotificationStoreIntegrationTest(t)
-	require.NoError(t, controlPlane.SendAndWaitForAck(1, service.AsyncCommandResult{
-		CommandId: service.Int64CommandId(2),
+	require.NoError(t, controlPlane.SendAndWaitForAck(1, message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(2),
 		Error:     "",
 	}))
 	require.Equal(t, int32(1), enqueueKeyInvoked.Load())
 
-	require.Equal(t, &service.AsyncCommandResult{
-		CommandId: service.Int64CommandId(2),
+	require.Equal(t, &message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(2),
 		Error:     "",
-	}, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, service.Int64CommandId(2)))
+	}, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, message.Int64CommandId(2)))
 
 	notificationsStore.CleanPodNotification(expectedNamespacedName, expectedPodIp)
 
-	require.Nil(t, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, service.Int64CommandId(2)))
+	require.Nil(t, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, message.Int64CommandId(2)))
 }
 
 func TestAsyncCommandNotificationStore_Integration_CleanPodsNotifications(t *testing.T) {
 	controlPlane, enqueueKeyInvoked, notificationsStore, expectedNamespacedName, expectedPodIp := setupAsyncCommandNotificationStoreIntegrationTest(t)
-	require.NoError(t, controlPlane.SendAndWaitForAck(1, service.AsyncCommandResult{
-		CommandId: service.Int64CommandId(2),
+	require.NoError(t, controlPlane.SendAndWaitForAck(1, message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(2),
 		Error:     "",
 	}))
 	require.Equal(t, int32(1), enqueueKeyInvoked.Load())
 
-	require.Equal(t, &service.AsyncCommandResult{
-		CommandId: service.Int64CommandId(2),
+	require.Equal(t, &message.AsyncCommandResult{
+		CommandId: message.Int64CommandId(2),
 		Error:     "",
-	}, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, service.Int64CommandId(2)))
+	}, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, message.Int64CommandId(2)))
 
 	notificationsStore.CleanPodsNotifications(expectedNamespacedName)
 
-	require.Nil(t, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, service.Int64CommandId(2)))
+	require.Nil(t, notificationsStore.GetCommandResult(expectedNamespacedName, expectedPodIp, message.Int64CommandId(2)))
 }
 
 func setupAsyncCommandNotificationStoreIntegrationTest(t *testing.T) (control.Service, *atomic.Int32, *reconciler.AsyncCommandNotificationStore, types.NamespacedName, string) {
