@@ -110,7 +110,7 @@ func (f *asyncCommandHandler) HandleServiceMessage(ctx context.Context, msg cont
 	err := commandValue.(encoding.BinaryUnmarshaler).UnmarshalBinary(msg.Payload())
 	if err != nil {
 		logging.FromContext(ctx).Warnw("Error while parsing the async command", zap.Error(err))
-		msg.AckWithError(fmt.Errorf("error while parsing the async commmand: %w", err))
+		msg.AckWithError(fmt.Errorf("error while parsing the async command: %w", err))
 		return
 	}
 

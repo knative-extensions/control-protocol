@@ -177,5 +177,5 @@ func TestNewAsyncCommandHandler_BadMessage(t *testing.T) {
 	assert.Error(t, receivingSvc.InvokeMessageHandlerWithErr(
 		context.TODO(),
 		&msg,
-	), "error while parsing the async commmand: unmarshal error")
+	), "error while parsing the async command: unmarshal error")
 }
