@@ -23,7 +23,7 @@ import (
 
 type OpCode uint8
 
-const AckOpCode OpCode = 0
+const AckOpCode = OpCode(^uint8(0))
 
 type ServiceMessage struct {
 	inboundMessage *Message
