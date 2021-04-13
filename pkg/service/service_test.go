@@ -60,6 +60,35 @@ func TestService_SendAndWaitForAck(t *testing.T) {
 	wg.Wait()
 }
 
+func TestService_SendAndWaitForAckWithError(t *testing.T) {
+	mockConnection := test.NewConnectionMock()
+
+	ctx, cancelFn := context.WithCancel(context.TODO())
+	t.Cleanup(cancelFn)
+
+	svc := service.NewService(ctx, mockConnection)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		err := svc.SendAndWaitForAck(10, test.SomeMockPayload)
+		assert.Error(t, err, "Ack contained an error: Some wacky error")
+	}()
+
+	outboundMessage := <-mockConnection.OutboundCh
+
+	require.Equal(t, uint8(10), outboundMessage.OpCode())
+	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessage.Length())
+
+	inboundMessage := ctrl.NewMessage(outboundMessage.UUID(), uint8(ctrl.AckOpCode), []byte("Some wacky error"))
+
+	mockConnection.InboundCh <- &inboundMessage
+
+	wg.Wait()
+}
+
 func TestService_MessageHandler(t *testing.T) {
 	mockConnection := test.NewConnectionMock()
 
@@ -88,6 +117,37 @@ func TestService_MessageHandler(t *testing.T) {
 	outboundMessage := <-mockConnection.OutboundCh
 	require.Equal(t, uint8(ctrl.AckOpCode), outboundMessage.OpCode())
 	require.Equal(t, msgUuid, outboundMessage.UUID())
+}
+
+func TestService_MessageHandler_AckWithError(t *testing.T) {
+	mockConnection := test.NewConnectionMock()
+
+	ctx, cancelFn := context.WithCancel(context.TODO())
+	t.Cleanup(cancelFn)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	svc := service.NewService(ctx, mockConnection)
+
+	svc.MessageHandler(ctrl.MessageHandlerFunc(func(ctx context.Context, message ctrl.ServiceMessage) {
+		defer wg.Done()
+		assert.Equal(t, uint8(10), message.Headers().OpCode())
+		assert.Equal(t, []byte(test.SomeMockPayload), message.Payload())
+
+		message.AckWithError(errors.New("some wacky error"))
+	}))
+
+	msgUuid := uuid.New()
+	inboundMessage := ctrl.NewMessage(msgUuid, uint8(10), []byte(test.SomeMockPayload))
+	mockConnection.InboundCh <- &inboundMessage
+
+	wg.Wait()
+
+	outboundMessage := <-mockConnection.OutboundCh
+	require.Equal(t, uint8(ctrl.AckOpCode), outboundMessage.OpCode())
+	require.Equal(t, msgUuid, outboundMessage.UUID())
+	require.Equal(t, []byte("some wacky error"), outboundMessage.Payload())
 }
 
 func TestService_ErrorHandler(t *testing.T) {
