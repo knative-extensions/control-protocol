@@ -175,7 +175,7 @@ func TestClientToServerWithServerDisconnection(t *testing.T) {
 	t.Cleanup(clientCancelFn)
 	t.Cleanup(serverCancelFn)
 
-	controlServer, err := network.StartControlServer(serverCtx, serverTLSConf)
+	controlServer, err := network.StartControlServer(serverCtx, serverTLSConf, network.WithPort(0))
 	require.NoError(t, err)
 
 	client, err := network.StartControlClient(clientCtx, clientTLSDialer, fmt.Sprintf("127.0.0.1:%d", controlServer.ListeningPort()))
