@@ -1,8 +1,12 @@
 # Async Command pattern
 
-The async command pattern allows developing commands where the controller sends a command to the data plane and doesn't expect an immediate response.
+The async command pattern allows developing commands where the controller sends
+a command to the data plane and doesn't expect an immediate response.
 
-This is similar to the request-response, with the important difference that the command execution doesn't block the reconciliation, that is the command may take a while to execute, and in the meantime the reconciler can flag the k8s resource as _processing_ such command.
+This is similar to the request-response, with the important difference that the
+command execution doesn't block the reconciliation, that is the command may take
+a while to execute, and in the meantime the reconciler can flag the k8s resource
+as _processing_ such command.
 
 The flow of the async command pattern looks like:
 
@@ -37,7 +41,8 @@ deactivate Controller
 
 In order to implement this pattern, some utilities are provided:
 
-* `service.NewAsyncCommandHandler` which wraps `ServiceMessage` in order to simplify sending back the async result:
+- `service.NewAsyncCommandHandler` which wraps `ServiceMessage` in order to
+  simplify sending back the async result:
 
 ```go
 dataPlaneService.MessageHandler(service.NewAsyncCommandHandler(
@@ -57,7 +62,9 @@ dataPlaneService.MessageHandler(service.NewAsyncCommandHandler(
 ))
 ```
 
-* `reconciler.NewAsyncCommandNotificationStore` which wraps `NotificationStore` in order to provide a specialized interface to handle `AsyncCommandResult` messages:
+- `reconciler.NewAsyncCommandNotificationStore` which wraps `NotificationStore`
+  in order to provide a specialized interface to handle `AsyncCommandResult`
+  messages:
 
 ```go
 // Control plane sends the command

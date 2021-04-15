@@ -2,4 +2,4 @@
 
 ## Patterns
 
-* [Async Command pattern](async_command_pattern.md)
+- [Async Command pattern](async_command_pattern.md)
