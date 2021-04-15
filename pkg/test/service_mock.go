@@ -73,6 +73,17 @@ func (s *ServiceMock) InvokeMessageHandler(ctx context.Context, message *control
 	return acked.Load()
 }
 
+// InvokeMessageHandlerWithErr invokes the registered message handler and returns the eventual error if the message was acked back with an error
+func (s *ServiceMock) InvokeMessageHandlerWithErr(ctx context.Context, message *control.Message) error {
+	acked := atomic.NewError(nil)
+	ackFn := func(err error) {
+		acked.Store(err)
+	}
+
+	s.messageHandler.HandleServiceMessage(ctx, control.NewServiceMessage(message, ackFn))
+	return acked.Load()
+}
+
 func (s *ServiceMock) InvokeErrorHandler(ctx context.Context, err error) {
 	s.errorHandler.HandleServiceError(ctx, err)
 }
