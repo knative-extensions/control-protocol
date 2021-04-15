@@ -111,7 +111,7 @@ func MustSetupSecureControlWithPool(t *testing.T, ctx context.Context, opts ...r
 
 	serverTlsConf, clientDialer := MustGenerateTestTLSConf(t, ctx)
 
-	server, err := network.StartControlServer(serverCtx, serverTlsConf)
+	server, err := network.StartControlServer(serverCtx, serverTlsConf, network.WithPort(0))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		serverCancelFn()
