@@ -2,7 +2,7 @@ name: KinD e2e tests
 
 on:
   pull_request:
-    branches: [ 'master' ]
+    branches: [ 'main' ]
 
   schedule:
   - cron: '0 */2 * * *'
@@ -44,6 +44,7 @@ jobs:
 
         # Add the flags we use for each of these test suites.
         - test-suite: ./test/conformance
+          extra-test-flags: ""
     env:
       GOPATH: ${{ github.workspace }}
       GO111MODULE: off
