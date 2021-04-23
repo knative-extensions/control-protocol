@@ -111,7 +111,7 @@ func TestMessageRouterIntegration_MessageNotMatchingAck(t *testing.T) {
 		}),
 	})
 
-	require.NoError(t, controlPlane.SendAndWaitForAck(10, test.MockPayload("Funky!")))
+	require.NotNil(t, controlPlane.SendAndWaitForAck(10, test.MockPayload("Funky!")))
 
 	require.Equal(t, int32(0), opcode1Count.Load())
 	require.Equal(t, int32(0), opcode2Count.Load())
