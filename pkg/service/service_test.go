@@ -60,6 +60,36 @@ func TestService_SendAndWaitForAck(t *testing.T) {
 	wg.Wait()
 }
 
+func TestService_SendEmptyPayload(t *testing.T) {
+	mockConnection := test.NewConnectionMock()
+
+	ctx, cancelFn := context.WithCancel(context.TODO())
+	t.Cleanup(cancelFn)
+
+	svc := service.NewService(ctx, mockConnection)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		err := svc.SendAndWaitForAck(10, nil)
+		require.NoError(t, err)
+	}()
+
+	outboundMessage := <-mockConnection.OutboundCh
+
+	require.Equal(t, uint8(10), outboundMessage.OpCode())
+	require.Equal(t, uint32(0), outboundMessage.Length())
+	require.Len(t, outboundMessage.Payload(), 0)
+
+	inboundMessage := ctrl.NewMessage(outboundMessage.UUID(), uint8(ctrl.AckOpCode), nil)
+
+	mockConnection.InboundCh <- &inboundMessage
+
+	wg.Wait()
+}
+
 func TestService_SendAndWaitForAckWithError(t *testing.T) {
 	mockConnection := test.NewConnectionMock()
 
