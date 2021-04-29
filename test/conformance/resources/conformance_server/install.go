@@ -23,11 +23,12 @@ import (
 	"knative.dev/reconciler-test/pkg/manifest"
 )
 
-func StartPod(name string, image string, port int) feature.StepFn {
+func StartPod(name string, image string, port int, tls bool) feature.StepFn {
 	cfg := map[string]interface{}{
 		"name":  name,
 		"port":  port,
 		"image": image,
+		"tls":   tls,
 	}
 
 	return func(ctx context.Context, t feature.T) {

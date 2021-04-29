@@ -23,11 +23,12 @@ import (
 	"knative.dev/reconciler-test/pkg/manifest"
 )
 
-func StartJob(name string, image string, host string) feature.StepFn {
+func StartJob(name string, image string, host string, tls bool) feature.StepFn {
 	cfg := map[string]interface{}{
 		"name":  name,
 		"host":  host,
 		"image": image,
+		"tls":   tls,
 	}
 
 	return func(ctx context.Context, t feature.T) {

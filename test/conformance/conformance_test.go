@@ -28,10 +28,17 @@ import (
 func TestConformance(t *testing.T) {
 	ctx, env := global.Environment()
 
+	conformanceGoClient := test.ImagePath("conformance-go-client")
+	conformanceGoServer := test.ImagePath("conformance-go-server")
+
 	// Test that a Broker can act as middleware.
 	env.Test(ctx, t, feature.ConformanceFeature(
-		test.ImagePath("conformance-go-client"),
-		test.ImagePath("conformance-go-server"),
+		conformanceGoClient,
+		conformanceGoServer,
+	))
+	env.Test(ctx, t, feature.TLSConformanceFeature(
+		conformanceGoClient,
+		conformanceGoServer,
 	))
 
 	env.Finish()

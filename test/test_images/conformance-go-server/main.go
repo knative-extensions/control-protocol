@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 
 	"go.uber.org/zap"
@@ -40,6 +41,8 @@ func main() {
 		panic(fmt.Sprintf("cannot parse the PORT env: %v", err))
 	}
 
+	tlsEnv := strings.TrimSpace(strings.ToLower(os.Getenv("TLS")))
+
 	devLogger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
@@ -47,7 +50,12 @@ func main() {
 	logger := devLogger.Sugar()
 	ctx := logging.WithLogger(context.Background(), logger)
 
-	ctrlServer, err := network.StartInsecureControlServer(ctx, network.WithPort(port))
+	var ctrlServer *network.ControlServer
+	if tlsEnv == "true" {
+		ctrlServer, err = network.StartControlServer(ctx, network.LoadServerTLSConfigFromFile, network.WithPort(port))
+	} else {
+		ctrlServer, err = network.StartInsecureControlServer(ctx, network.WithPort(port))
+	}
 	if err != nil {
 		panic(err)
 	}
