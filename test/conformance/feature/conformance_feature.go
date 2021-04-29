@@ -35,15 +35,15 @@ import (
 )
 
 func ConformanceFeature(clientImage string, serverImage string) *feature.Feature {
-	return conformanceFeature(clientImage, serverImage, false)
+	return conformanceFeature("ConformanceFeature", clientImage, serverImage, false)
 }
 
 func TLSConformanceFeature(clientImage string, serverImage string) *feature.Feature {
-	return conformanceFeature(clientImage, serverImage, true)
+	return conformanceFeature("TLSConformanceFeature", clientImage, serverImage, true)
 }
 
-func conformanceFeature(clientImage string, serverImage string, tls bool) *feature.Feature {
-	f := feature.NewFeature()
+func conformanceFeature(featureName string, clientImage string, serverImage string, tls bool) *feature.Feature {
+	f := feature.NewFeatureNamed(featureName)
 
 	client := "client"
 	server := "server"

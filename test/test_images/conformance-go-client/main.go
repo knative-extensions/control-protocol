@@ -53,7 +53,7 @@ func main() {
 		Deadline:  time.Time{},
 	}
 	if tlsEnv == "true" {
-		tlsConfig, err := network.LoadServerTLSConfigFromFile()
+		tlsConfig, err := network.LoadClientTLSConfigFromFile()
 		if err != nil {
 			panic(err)
 		}

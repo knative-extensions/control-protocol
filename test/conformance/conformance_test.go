@@ -35,6 +35,16 @@ func TestConformance(t *testing.T) {
 		conformanceGoClient,
 		conformanceGoServer,
 	))
+
+	env.Finish()
+}
+
+func TestTLSConformance(t *testing.T) {
+	ctx, env := global.Environment()
+
+	conformanceGoClient := test.ImagePath("conformance-go-client")
+	conformanceGoServer := test.ImagePath("conformance-go-server")
+
 	env.Test(ctx, t, feature.TLSConformanceFeature(
 		conformanceGoClient,
 		conformanceGoServer,
