@@ -48,14 +48,14 @@ func TestService_SendAndWaitForAck(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	outboundMessage := <-mockConnection.OutboundCh
+	outboundMessages := mockConnection.WaitAtLeastOneOutboundMessage()
+	require.Len(t, outboundMessages, 1)
 
-	require.Equal(t, uint8(10), outboundMessage.OpCode())
-	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessage.Length())
+	require.Equal(t, uint8(10), outboundMessages[0].OpCode())
+	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessages[0].Length())
 
-	inboundMessage := ctrl.NewMessage(outboundMessage.UUID(), uint8(ctrl.AckOpCode), nil)
-
-	mockConnection.InboundCh <- &inboundMessage
+	inboundMessage := ctrl.NewMessage(outboundMessages[0].UUID(), uint8(ctrl.AckOpCode), nil)
+	mockConnection.PushInboundMessage(&inboundMessage)
 
 	wg.Wait()
 }
@@ -77,15 +77,16 @@ func TestService_SendEmptyPayload(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	outboundMessage := <-mockConnection.OutboundCh
+	outboundMessages := mockConnection.WaitAtLeastOneOutboundMessage()
+	require.Len(t, outboundMessages, 1)
 
-	require.Equal(t, uint8(10), outboundMessage.OpCode())
-	require.Equal(t, uint32(0), outboundMessage.Length())
-	require.Len(t, outboundMessage.Payload(), 0)
+	require.Equal(t, uint8(10), outboundMessages[0].OpCode())
+	require.Equal(t, uint32(0), outboundMessages[0].Length())
+	require.Len(t, outboundMessages[0].Payload(), 0)
 
-	inboundMessage := ctrl.NewMessage(outboundMessage.UUID(), uint8(ctrl.AckOpCode), nil)
+	inboundMessage := ctrl.NewMessage(outboundMessages[0].UUID(), uint8(ctrl.AckOpCode), nil)
 
-	mockConnection.InboundCh <- &inboundMessage
+	mockConnection.PushInboundMessage(&inboundMessage)
 
 	wg.Wait()
 }
@@ -107,14 +108,15 @@ func TestService_SendAndWaitForAckWithError(t *testing.T) {
 		assert.Error(t, err, "Ack contained an error: Some wacky error")
 	}()
 
-	outboundMessage := <-mockConnection.OutboundCh
+	outboundMessages := mockConnection.WaitAtLeastOneOutboundMessage()
+	require.Len(t, outboundMessages, 1)
 
-	require.Equal(t, uint8(10), outboundMessage.OpCode())
-	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessage.Length())
+	require.Equal(t, uint8(10), outboundMessages[0].OpCode())
+	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessages[0].Length())
 
-	inboundMessage := ctrl.NewMessage(outboundMessage.UUID(), uint8(ctrl.AckOpCode), []byte("Some wacky error"))
+	inboundMessage := ctrl.NewMessage(outboundMessages[0].UUID(), uint8(ctrl.AckOpCode), []byte("Some wacky error"))
 
-	mockConnection.InboundCh <- &inboundMessage
+	mockConnection.PushInboundMessage(&inboundMessage)
 
 	wg.Wait()
 }
@@ -140,13 +142,14 @@ func TestService_MessageHandler(t *testing.T) {
 
 	msgUuid := uuid.New()
 	inboundMessage := ctrl.NewMessage(msgUuid, uint8(10), []byte(test.SomeMockPayload))
-	mockConnection.InboundCh <- &inboundMessage
+	mockConnection.PushInboundMessage(&inboundMessage)
 
 	wg.Wait()
 
-	outboundMessage := <-mockConnection.OutboundCh
-	require.Equal(t, uint8(ctrl.AckOpCode), outboundMessage.OpCode())
-	require.Equal(t, msgUuid, outboundMessage.UUID())
+	outboundMessages := mockConnection.WaitAtLeastOneOutboundMessage()
+	require.Len(t, outboundMessages, 1)
+	require.Equal(t, uint8(ctrl.AckOpCode), outboundMessages[0].OpCode())
+	require.Equal(t, msgUuid, outboundMessages[0].UUID())
 }
 
 func TestService_MessageHandler_AckWithError(t *testing.T) {
@@ -170,14 +173,15 @@ func TestService_MessageHandler_AckWithError(t *testing.T) {
 
 	msgUuid := uuid.New()
 	inboundMessage := ctrl.NewMessage(msgUuid, uint8(10), []byte(test.SomeMockPayload))
-	mockConnection.InboundCh <- &inboundMessage
+	mockConnection.PushInboundMessage(&inboundMessage)
 
 	wg.Wait()
 
-	outboundMessage := <-mockConnection.OutboundCh
-	require.Equal(t, uint8(ctrl.AckOpCode), outboundMessage.OpCode())
-	require.Equal(t, msgUuid, outboundMessage.UUID())
-	require.Equal(t, []byte("some wacky error"), outboundMessage.Payload())
+	outboundMessages := mockConnection.WaitAtLeastOneOutboundMessage()
+	require.Len(t, outboundMessages, 1)
+	require.Equal(t, uint8(ctrl.AckOpCode), outboundMessages[0].OpCode())
+	require.Equal(t, msgUuid, outboundMessages[0].UUID())
+	require.Equal(t, []byte("some wacky error"), outboundMessages[0].Payload())
 }
 
 func TestService_ErrorHandler(t *testing.T) {

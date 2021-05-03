@@ -93,7 +93,10 @@ func (c *service) sendBinaryAndWaitForAck(opcode ctrl.OpCode, payload []byte) er
 		c.waitingAcksMutex.Unlock()
 	}()
 
-	c.connection.OutboundMessages() <- &msg
+	err := c.connection.WriteMessage(c.ctx, &msg)
+	if err != nil {
+		return err
+	}
 
 	select {
 	case err := <-ackCh:
@@ -122,13 +125,19 @@ func (c *service) ErrorHandler(handler ctrl.ErrorHandler) {
 func (c *service) startPolling() {
 	go func() {
 		for {
+			msg, err := c.connection.ReadMessage(c.ctx)
+			if err != nil && err == c.ctx.Err() {
+				// Context closed, service closed
+				return
+			} else if err != nil {
+				logging.FromContext(c.ctx).Debugf("Error while reading message from the connection")
+			}
+			go c.accept(msg)
+		}
+	}()
+	go func() {
+		for {
 			select {
-			case msg, ok := <-c.connection.InboundMessages():
-				if !ok {
-					logging.FromContext(c.ctx).Debugf("InboundMessages channel closed, closing the polling")
-					return
-				}
-				go c.accept(msg)
 			case err, ok := <-c.connection.Errors():
 				if !ok {
 					logging.FromContext(c.ctx).Debugf("Errors channel closed")
@@ -162,13 +171,7 @@ func (c *service) accept(msg *ctrl.Message) {
 	} else {
 		ackFunc := func(err error) {
 			ackMsg := newAckMessage(msg.UUID(), err)
-			// Before resending, check if context is not closed
-			select {
-			case <-c.ctx.Done():
-				return
-			default:
-				c.connection.OutboundMessages() <- &ackMsg
-			}
+			_ = c.connection.WriteMessage(c.ctx, &ackMsg) // TODO what should we do with this error?
 		}
 		c.handlerMutex.RLock()
 		c.handler.HandleServiceMessage(c.ctx, ctrl.NewServiceMessage(msg, ackFunc))

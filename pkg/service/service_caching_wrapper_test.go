@@ -46,14 +46,13 @@ func TestCachingService(t *testing.T) {
 		}
 	}()
 
-	outboundMessage := <-mockConnection.OutboundCh
-	require.Equal(t, uint8(10), outboundMessage.OpCode())
-	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessage.Length())
+	outboundMessages := mockConnection.WaitAtLeastOneOutboundMessage()
+	require.Len(t, outboundMessages, 1)
+	require.Equal(t, uint8(10), outboundMessages[0].OpCode())
+	require.Equal(t, uint32(len([]byte(test.SomeMockPayload))), outboundMessages[0].Length())
 
-	inboundMessage := control.NewMessage(outboundMessage.UUID(), uint8(control.AckOpCode), nil)
-	mockConnection.InboundCh <- &inboundMessage
+	inboundMessage := control.NewMessage(outboundMessages[0].UUID(), uint8(control.AckOpCode), nil)
+	mockConnection.PushInboundMessage(&inboundMessage)
 
 	wg.Wait()
-
-	require.Empty(t, mockConnection.ConsumeOutboundMessages()) // No more outbound messages, just one
 }
