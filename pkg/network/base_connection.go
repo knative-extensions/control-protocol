@@ -85,7 +85,7 @@ func (t *baseTcpConnection) consumeConnection(conn net.Conn) {
 		t.writeQueue.unblockPoll()
 
 		err := conn.Close()
-		if err != nil && !isEOF(err) && !isUseOfClosedConnection(err) {
+		if err != nil && !isEOF(err) {
 			t.logger.Warnf("Error while closing the connection with local %s and remote %s: %s", conn.LocalAddr().String(), conn.RemoteAddr().String(), err)
 		}
 		t.logger.Debugf("Connection closed with local %s and remote %s", conn.LocalAddr().String(), conn.RemoteAddr().String())

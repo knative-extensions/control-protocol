@@ -33,19 +33,19 @@ type Dialer interface {
 	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
 }
 
-func StartControlClient(ctx context.Context, dialOptions Dialer, target string) (ctrl.Service, error) {
+func StartControlClient(ctx context.Context, dialer Dialer, target string) (ctrl.Service, error) {
 	if !strings.Contains(target, ":") {
 		target = target + ":9000"
 	}
 	logging.FromContext(ctx).Infof("Starting control client to %s", target)
 
 	// Let's try the dial
-	conn, err := tryDial(ctx, dialOptions, target, clientInitialDialRetry, clientDialRetryInterval)
+	conn, err := tryDial(ctx, dialer, target, clientInitialDialRetry, clientDialRetryInterval)
 	if err != nil {
 		return nil, fmt.Errorf("cannot perform the initial dial to target %s: %w", target, err)
 	}
 
-	tcpConn := newClientTcpConnection(ctx, dialOptions)
+	tcpConn := newClientTcpConnection(ctx, dialer)
 	svc := ctrlservice.NewService(ctx, tcpConn)
 
 	tcpConn.startPolling(conn)
@@ -53,11 +53,11 @@ func StartControlClient(ctx context.Context, dialOptions Dialer, target string) 
 	return svc, nil
 }
 
-func tryDial(ctx context.Context, dialOptions Dialer, target string, retries int, interval time.Duration) (net.Conn, error) {
+func tryDial(ctx context.Context, dialer Dialer, target string, retries int, interval time.Duration) (net.Conn, error) {
 	var conn net.Conn
 	var err error
 	for i := 0; i < retries; i++ {
-		conn, err = dialOptions.DialContext(ctx, "tcp", target)
+		conn, err = dialer.DialContext(ctx, "tcp", target)
 		if err == nil {
 			return conn, nil
 		}

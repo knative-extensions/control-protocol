@@ -7,6 +7,7 @@ import (
 	ctrl "knative.dev/control-protocol/pkg"
 )
 
+// Waiting for https://github.com/golang/go/issues/27935 to happen
 type unboundedMessageQueue struct {
 	cond  *sync.Cond
 	queue []*ctrl.Message
