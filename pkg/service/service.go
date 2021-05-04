@@ -171,7 +171,9 @@ func (c *service) accept(msg *ctrl.Message) {
 	} else {
 		ackFunc := func(err error) {
 			ackMsg := newAckMessage(msg.UUID(), err)
-			_ = c.connection.WriteMessage(c.ctx, &ackMsg) // TODO what should we do with this error?
+			if err := c.connection.WriteMessage(c.ctx, &ackMsg); err != nil && err != c.ctx.Err() {
+				logging.FromContext(c.ctx).Warnf("Unexpected failure while acking back: %v", err)
+			}
 		}
 		c.handlerMutex.RLock()
 		c.handler.HandleServiceMessage(c.ctx, ctrl.NewServiceMessage(msg, ackFunc))
