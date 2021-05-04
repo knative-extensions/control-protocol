@@ -16,45 +16,66 @@ limitations under the License.
 
 package test
 
-import control "knative.dev/control-protocol/pkg"
+import (
+	"context"
+	"sync"
+
+	control "knative.dev/control-protocol/pkg"
+)
 
 type ConnectionMock struct {
-	OutboundCh chan *control.Message
-	InboundCh  chan *control.Message
-	ErrorsCh   chan error
+	outboundMessageCond *sync.Cond
+	outboundMessages    []*control.Message
+
+	inboundCh chan *control.Message
+	ErrorsCh  chan error
 }
+
+var _ control.Connection = (*ConnectionMock)(nil)
 
 func NewConnectionMock() *ConnectionMock {
 	return &ConnectionMock{
-		OutboundCh: make(chan *control.Message, 10),
-		InboundCh:  make(chan *control.Message, 10),
-		ErrorsCh:   make(chan error, 10),
+		outboundMessageCond: sync.NewCond(new(sync.Mutex)),
+		inboundCh:           make(chan *control.Message, 10),
+		ErrorsCh:            make(chan error, 10),
 	}
 }
 
-func (c *ConnectionMock) OutboundMessages() chan<- *control.Message {
-	return c.OutboundCh
+func (c *ConnectionMock) WriteMessage(ctx context.Context, msg *control.Message) error {
+	c.outboundMessageCond.L.Lock()
+	c.outboundMessages = append(c.outboundMessages, msg)
+	c.outboundMessageCond.L.Unlock()
+	c.outboundMessageCond.Broadcast()
+	return nil
 }
 
-func (c *ConnectionMock) InboundMessages() <-chan *control.Message {
-	return c.InboundCh
+func (c *ConnectionMock) ReadMessage(ctx context.Context) (*control.Message, error) {
+	select {
+	case msg, ok := <-c.inboundCh:
+		if !ok {
+			return nil, ctx.Err()
+		}
+		return msg, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
 func (c *ConnectionMock) Errors() <-chan error {
 	return c.ErrorsCh
 }
 
-func (c *ConnectionMock) ConsumeOutboundMessages() []*control.Message {
-	var res []*control.Message
-	for {
-		select {
-		case msg, ok := <-c.OutboundCh:
-			if !ok {
-				return res
-			}
-			res = append(res, msg)
-		default:
-			return res
-		}
+func (c *ConnectionMock) PushInboundMessage(msg *control.Message) {
+	c.inboundCh <- msg
+}
+
+func (c *ConnectionMock) WaitAtLeastOneOutboundMessage() []*control.Message {
+	c.outboundMessageCond.L.Lock()
+	for len(c.outboundMessages) == 0 {
+		c.outboundMessageCond.Wait()
 	}
+	cpy := make([]*control.Message, len(c.outboundMessages))
+	copy(cpy, c.outboundMessages)
+	c.outboundMessageCond.L.Unlock()
+	return cpy
 }
