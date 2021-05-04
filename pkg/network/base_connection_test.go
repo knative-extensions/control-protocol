@@ -43,11 +43,11 @@ func TestBaseTcpConnection_ConsumeConnection_ReturnsAfterConnectionFailure(t *te
 	}
 
 	tcpConn := &baseTcpConnection{
-		ctx:                    ctx,
-		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.Message, 10),
-		inboundMessageChannel:  make(chan *ctrl.Message, 10),
-		errors:                 make(chan error, 10),
+		ctx:                 ctx,
+		logger:              logger.Sugar(),
+		writeQueue:          newUnboundedMessageQueue(),
+		readQueue:           newUnboundedMessageQueue(),
+		unrecoverableErrors: make(chan error, 10),
 	}
 
 	var wg sync.WaitGroup
@@ -84,11 +84,11 @@ func TestBaseTcpConnection_ConsumeConnection_ReturnsAfterContextClosed(t *testin
 	}
 
 	tcpConn := &baseTcpConnection{
-		ctx:                    ctx,
-		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.Message, 10),
-		inboundMessageChannel:  make(chan *ctrl.Message, 10),
-		errors:                 make(chan error, 10),
+		ctx:                 ctx,
+		logger:              logger.Sugar(),
+		writeQueue:          newUnboundedMessageQueue(),
+		readQueue:           newUnboundedMessageQueue(),
+		unrecoverableErrors: make(chan error, 10),
 	}
 
 	var wg sync.WaitGroup
@@ -124,11 +124,11 @@ func TestBaseTcpConnection_ConsumeConnection_BrokenConnectionDoesntLoseOutboundM
 	}
 
 	tcpConn := &baseTcpConnection{
-		ctx:                    ctx,
-		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.Message, 10),
-		inboundMessageChannel:  make(chan *ctrl.Message, 10),
-		errors:                 make(chan error, 10),
+		ctx:                 ctx,
+		logger:              logger.Sugar(),
+		writeQueue:          newUnboundedMessageQueue(),
+		readQueue:           newUnboundedMessageQueue(),
+		unrecoverableErrors: make(chan error, 10),
 	}
 
 	var wg sync.WaitGroup
@@ -143,11 +143,11 @@ func TestBaseTcpConnection_ConsumeConnection_BrokenConnectionDoesntLoseOutboundM
 	}()
 	go func() {
 		// Let's have some fun here and fail the writes
-		tcpConn.outboundMessageChannel <- &msg
+		tcpConn.WriteMessage(&msg)
 		// This blocks while waiting for writeReturn to be read
 		conn.writeReturn <- errors.New("something broke while writing")
 
-		msgInTheCh := <-tcpConn.outboundMessageChannel
+		msgInTheCh := tcpConn.writeQueue.blockingPoll(ctx)
 		assert.Same(t, &msg, msgInTheCh)
 
 		// Close the conn

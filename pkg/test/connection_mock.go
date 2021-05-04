@@ -17,7 +17,6 @@ limitations under the License.
 package test
 
 import (
-	"context"
 	"sync"
 
 	control "knative.dev/control-protocol/pkg"
@@ -41,24 +40,19 @@ func NewConnectionMock() *ConnectionMock {
 	}
 }
 
-func (c *ConnectionMock) WriteMessage(ctx context.Context, msg *control.Message) error {
+func (c *ConnectionMock) WriteMessage(msg *control.Message) {
 	c.outboundMessageCond.L.Lock()
 	c.outboundMessages = append(c.outboundMessages, msg)
 	c.outboundMessageCond.L.Unlock()
 	c.outboundMessageCond.Broadcast()
-	return nil
 }
 
-func (c *ConnectionMock) ReadMessage(ctx context.Context) (*control.Message, error) {
-	select {
-	case msg, ok := <-c.inboundCh:
-		if !ok {
-			return nil, ctx.Err()
-		}
-		return msg, nil
-	case <-ctx.Done():
-		return nil, ctx.Err()
+func (c *ConnectionMock) ReadMessage() *control.Message {
+	msg, ok := <-c.inboundCh
+	if !ok {
+		return nil
 	}
+	return msg
 }
 
 func (c *ConnectionMock) Errors() <-chan error {

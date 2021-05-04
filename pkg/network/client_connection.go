@@ -80,11 +80,11 @@ type clientTcpConnection struct {
 func newClientTcpConnection(ctx context.Context, dialer Dialer) *clientTcpConnection {
 	c := &clientTcpConnection{
 		baseTcpConnection: baseTcpConnection{
-			ctx:                    ctx,
-			logger:                 logging.FromContext(ctx),
-			outboundMessageChannel: make(chan *ctrl.Message, 10),
-			inboundMessageChannel:  make(chan *ctrl.Message, 10),
-			errors:                 make(chan error, 10),
+			ctx:                 ctx,
+			logger:              logging.FromContext(ctx),
+			writeQueue:          newUnboundedMessageQueue(),
+			readQueue:           newUnboundedMessageQueue(),
+			unrecoverableErrors: make(chan error, 10),
 		},
 		dialer: dialer,
 	}
@@ -103,7 +103,7 @@ func (t *clientTcpConnection) startPolling(initialConn net.Conn) {
 		t.reDialLoop(initialConn.RemoteAddr())
 
 		t.logger.Infof("Closing control client")
-		t.close()
+		t.cleanup()
 		t.logger.Infof("Connection closed")
 	}(initialConn)
 }

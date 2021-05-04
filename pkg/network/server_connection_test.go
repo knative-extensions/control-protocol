@@ -27,8 +27,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
-
-	ctrl "knative.dev/control-protocol/pkg"
 )
 
 func TestServerTcpConnection_CloseCtxCausesListenerToClose(t *testing.T) {
@@ -42,11 +40,11 @@ func TestServerTcpConnection_CloseCtxCausesListenerToClose(t *testing.T) {
 
 	tcpConn := &serverTcpConnection{
 		baseTcpConnection: baseTcpConnection{
-			ctx:                    ctx,
-			logger:                 logger.Sugar(),
-			outboundMessageChannel: make(chan *ctrl.Message, 10),
-			inboundMessageChannel:  make(chan *ctrl.Message, 10),
-			errors:                 make(chan error, 10),
+			ctx:                 ctx,
+			logger:              logger.Sugar(),
+			writeQueue:          newUnboundedMessageQueue(),
+			readQueue:           newUnboundedMessageQueue(),
+			unrecoverableErrors: make(chan error, 10),
 		},
 		listener: listener,
 	}
