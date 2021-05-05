@@ -7,7 +7,9 @@ import (
 	ctrl "knative.dev/control-protocol/pkg"
 )
 
-// Waiting for https://github.com/golang/go/issues/27935 to happen
+// unboundedMessageQueue is a pull based message queue.
+// If you're wondering why we need this,
+// we're waiting for https://github.com/golang/go/issues/27935 to happen.
 type unboundedMessageQueue struct {
 	cond  *sync.Cond
 	queue []*ctrl.Message
