@@ -38,16 +38,17 @@ func TestBaseTcpConnection_ConsumeConnection_ReturnsAfterConnectionFailure(t *te
 	logger, _ := zap.NewDevelopment()
 
 	conn := &mockConn{
-		readReturn:   make(chan interface{}, 10),
-		closeInvoked: atomic.NewBool(false),
+		readReturn:         make(chan interface{}, 10),
+		closeInvoked:       atomic.NewBool(false),
+		closeInvokedSignal: make(chan interface{}),
 	}
 
 	tcpConn := &baseTcpConnection{
-		ctx:                    ctx,
-		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.Message, 10),
-		inboundMessageChannel:  make(chan *ctrl.Message, 10),
-		errors:                 make(chan error, 10),
+		ctx:                 ctx,
+		logger:              logger.Sugar(),
+		writeQueue:          newUnboundedMessageQueue(),
+		readQueue:           newUnboundedMessageQueue(),
+		unrecoverableErrors: make(chan error, 10),
 	}
 
 	var wg sync.WaitGroup
@@ -79,16 +80,17 @@ func TestBaseTcpConnection_ConsumeConnection_ReturnsAfterContextClosed(t *testin
 	logger, _ := zap.NewDevelopment()
 
 	conn := &mockConn{
-		readReturn:   make(chan interface{}, 10),
-		closeInvoked: atomic.NewBool(false),
+		readReturn:         make(chan interface{}, 10),
+		closeInvokedSignal: make(chan interface{}),
+		closeInvoked:       atomic.NewBool(false),
 	}
 
 	tcpConn := &baseTcpConnection{
-		ctx:                    ctx,
-		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.Message, 10),
-		inboundMessageChannel:  make(chan *ctrl.Message, 10),
-		errors:                 make(chan error, 10),
+		ctx:                 ctx,
+		logger:              logger.Sugar(),
+		writeQueue:          newUnboundedMessageQueue(),
+		readQueue:           newUnboundedMessageQueue(),
+		unrecoverableErrors: make(chan error, 10),
 	}
 
 	var wg sync.WaitGroup
@@ -100,7 +102,7 @@ func TestBaseTcpConnection_ConsumeConnection_ReturnsAfterContextClosed(t *testin
 		wg.Done()
 	}()
 	go func() {
-		// Let's just wait some random time to simulate the connection is actuall doing something
+		// Let's just wait some random time to simulate the connection is actually doing something
 		// (It doesn't make any different to keep or remove this)
 		time.Sleep(1 * time.Second)
 
@@ -118,17 +120,18 @@ func TestBaseTcpConnection_ConsumeConnection_BrokenConnectionDoesntLoseOutboundM
 	logger, _ := zap.NewDevelopment()
 
 	conn := &mockConn{
-		readReturn:   make(chan interface{}, 10),
-		writeReturn:  make(chan interface{}),
-		closeInvoked: atomic.NewBool(false),
+		readReturn:         make(chan interface{}, 10),
+		writeReturn:        make(chan interface{}),
+		closeInvoked:       atomic.NewBool(false),
+		closeInvokedSignal: make(chan interface{}),
 	}
 
 	tcpConn := &baseTcpConnection{
-		ctx:                    ctx,
-		logger:                 logger.Sugar(),
-		outboundMessageChannel: make(chan *ctrl.Message, 10),
-		inboundMessageChannel:  make(chan *ctrl.Message, 10),
-		errors:                 make(chan error, 10),
+		ctx:                 ctx,
+		logger:              logger.Sugar(),
+		writeQueue:          newUnboundedMessageQueue(),
+		readQueue:           newUnboundedMessageQueue(),
+		unrecoverableErrors: make(chan error, 10),
 	}
 
 	var wg sync.WaitGroup
@@ -143,11 +146,11 @@ func TestBaseTcpConnection_ConsumeConnection_BrokenConnectionDoesntLoseOutboundM
 	}()
 	go func() {
 		// Let's have some fun here and fail the writes
-		tcpConn.outboundMessageChannel <- &msg
+		tcpConn.WriteMessage(&msg)
 		// This blocks while waiting for writeReturn to be read
 		conn.writeReturn <- errors.New("something broke while writing")
 
-		msgInTheCh := <-tcpConn.outboundMessageChannel
+		msgInTheCh := tcpConn.writeQueue.blockingPoll(ctx)
 		assert.Same(t, &msg, msgInTheCh)
 
 		// Close the conn
@@ -159,32 +162,43 @@ func TestBaseTcpConnection_ConsumeConnection_BrokenConnectionDoesntLoseOutboundM
 }
 
 type mockConn struct {
-	writeReturn  chan interface{}
-	readReturn   chan interface{}
-	closeInvoked *atomic.Bool
+	writeReturn        chan interface{}
+	readReturn         chan interface{}
+	closeInvoked       *atomic.Bool
+	closeInvokedSignal chan interface{}
 }
 
 func (m *mockConn) Read(b []byte) (n int, err error) {
-	val := <-m.readReturn
-	if err, ok := val.(error); ok {
-		return 0, err
-	} else {
-		return len(b), nil
+	select {
+	case val := <-m.readReturn:
+		if err, ok := val.(error); ok {
+			return 0, err
+		} else {
+			return len(b), nil
+		}
+	case <-m.closeInvokedSignal:
+		return 0, errors.New("closed connection")
 	}
 }
 
 func (m *mockConn) Write(b []byte) (n int, err error) {
-	val := <-m.writeReturn
-	if err, ok := val.(error); ok {
-		return 0, err
-	} else {
-		return len(b), nil
+	select {
+	case val := <-m.writeReturn:
+		if err, ok := val.(error); ok {
+			return 0, err
+		} else {
+			return len(b), nil
+		}
+	case <-m.closeInvokedSignal:
+		return 0, errors.New("closed connection")
 	}
 }
 
 func (m *mockConn) Close() error {
-	m.readReturn <- errors.New("closed connection")
-	m.closeInvoked.Store(true)
+	if m.closeInvoked != nil {
+		m.closeInvoked.Store(true)
+	}
+	close(m.closeInvokedSignal)
 	return nil
 }
 
