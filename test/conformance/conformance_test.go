@@ -23,16 +23,17 @@ import (
 
 	"knative.dev/control-protocol/test/conformance/feature"
 	"knative.dev/pkg/test"
+	"knative.dev/reconciler-test/pkg/environment"
 )
 
 func TestConformance(t *testing.T) {
-	ctx, env := global.Environment()
+	ctx, env := global.Environment(
+		environment.Managed(t),
+	)
 
 	// Test that a Broker can act as middleware.
 	env.Test(ctx, t, feature.ConformanceFeature(
 		test.ImagePath("conformance-go-client"),
 		test.ImagePath("conformance-go-server"),
 	))
-
-	env.Finish()
 }
