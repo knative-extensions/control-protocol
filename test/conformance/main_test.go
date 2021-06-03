@@ -20,14 +20,16 @@ package conformance
 
 import (
 	"flag"
+	"log"
 	"os"
 	"testing"
 
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"knative.dev/pkg/injection"
 	_ "knative.dev/pkg/system/testing"
 
+	"knative.dev/pkg/injection"
+	"knative.dev/pkg/test"
 	"knative.dev/reconciler-test/pkg/environment"
 )
 
@@ -51,7 +53,12 @@ func TestMain(m *testing.M) {
 	// testing framework for namespace management, and could be leveraged by
 	// features to pull Kubernetes clients or the test environment out of the
 	// context passed in the features.
-	ctx, startInformers := injection.EnableInjectionOrDie(nil, nil) //nolint
+	config, err := test.Flags.ClientConfig.GetRESTConfig()
+	if err != nil {
+		log.Fatal("Error building rest config: ", err)
+	}
+
+	ctx, startInformers := injection.EnableInjectionOrDie(nil, config) //nolint
 	startInformers()
 
 	// global is used to make instances of Environments, NewGlobalEnvironment
