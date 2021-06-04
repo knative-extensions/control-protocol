@@ -19,11 +19,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"math/rand"
 	"net"
 	"os"
+	"strings"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 	ctrl "knative.dev/control-protocol/pkg"
@@ -35,6 +38,7 @@ import (
 
 func main() {
 	host := os.Getenv("HOST")
+	tlsEnv := strings.TrimSpace(strings.ToLower(os.Getenv("TLS")))
 
 	devLogger, err := zap.NewDevelopment()
 	if err != nil {
@@ -43,7 +47,24 @@ func main() {
 	logger := devLogger.Sugar()
 	ctx := logging.WithLogger(context.Background(), logger)
 
-	ctrlService, err := network.StartControlClient(ctx, &net.Dialer{}, host)
+	// Configure dialer, eventually with mTLS
+	var dialer network.Dialer = &net.Dialer{
+		KeepAlive: network.KeepAlive,
+		Deadline:  time.Time{},
+	}
+	if tlsEnv == "true" {
+		tlsConfig, err := network.LoadClientTLSConfigFromFile()
+		if err != nil {
+			panic(err)
+		}
+
+		dialer = &tls.Dialer{
+			NetDialer: dialer.(*net.Dialer),
+			Config:    tlsConfig,
+		}
+	}
+
+	ctrlService, err := network.StartControlClient(ctx, dialer, host)
 	if err != nil {
 		panic(err)
 	}

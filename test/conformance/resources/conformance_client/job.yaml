@@ -24,10 +24,24 @@ spec:
     spec:
       restartPolicy: "Never"
       backoffLimit: 0
+      {{ if .tls }}
+      volumes:
+        - name: tls
+          secret:
+            secretName: "{{ .name }}-keys"
+      {{ end }}
       containers:
       - name: conformance-client
         image: {{ .image }}
         imagePullPolicy: "IfNotPresent"
+        {{ if .tls }}
+        volumeMounts:
+          - name: tls
+            mountPath: "/etc/control-secret"
+            readOnly: true
+        {{ end }}
         env:
           - name: HOST
             value: {{ .host }}
+          - name: TLS
+            value: "{{ .tls }}"

@@ -21,10 +21,24 @@ metadata:
     app: conformance-server-{{ .name }}
 spec:
   restartPolicy: "Never"
+  {{ if .tls }}
+  volumes:
+    - name: tls
+      secret:
+        secretName: "{{ .name }}-keys"
+  {{ end }}
   containers:
     - name: conformance-server
       image: {{ .image }}
       imagePullPolicy: "IfNotPresent"
+      {{ if .tls }}
+      volumeMounts:
+        - name: tls
+          mountPath: "/etc/control-secret"
+          readOnly: true
+      {{ end }}
       env:
         - name: "PORT"
           value: "{{ .port }}"
+        - name: TLS
+          value: "{{ .tls }}"

@@ -19,10 +19,12 @@ package feature
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/control-protocol/pkg/certificates"
 	"knative.dev/control-protocol/test/conformance/resources/conformance_client"
 	kubeclient "knative.dev/pkg/client/injection/kube/client"
 	"knative.dev/reconciler-test/pkg/environment"
@@ -33,14 +35,80 @@ import (
 )
 
 func ConformanceFeature(clientImage string, serverImage string) *feature.Feature {
-	f := feature.NewFeature()
+	return conformanceFeature("ConformanceFeature", clientImage, serverImage, false)
+}
+
+func TLSConformanceFeature(clientImage string, serverImage string) *feature.Feature {
+	return conformanceFeature("TLSConformanceFeature", clientImage, serverImage, true)
+}
+
+func conformanceFeature(featureName string, clientImage string, serverImage string, tls bool) *feature.Feature {
+	f := feature.NewFeatureNamed(featureName)
 
 	client := "client"
 	server := "server"
 
 	port := 10000
 
-	f.Setup("Start server", conformance_server.StartPod(server, serverImage, port))
+	if tls {
+		// We need to generate the certs and push them in two secrets,
+		// one for the server and one for the client
+		// This is the job the certificates controller usually does for us
+		f.Setup("Generate client and server certs", func(ctx context.Context, t feature.T) {
+			// Generate the keys
+			caKP, err := certificates.CreateCACerts(ctx, 24*time.Hour)
+			require.NoError(t, err)
+			caCert, caPrivateKey, err := caKP.Parse()
+			require.NoError(t, err)
+
+			controlPlaneKeyPair, err := certificates.CreateControlPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour)
+			require.NoError(t, err)
+
+			dataPlaneKeyPair, err := certificates.CreateDataPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour)
+			require.NoError(t, err)
+
+			// Create the secrets
+			clientSecret := corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      client + "-keys",
+					Namespace: environment.FromContext(ctx).Namespace(),
+				},
+				Data: map[string][]byte{
+					certificates.SecretCertKey:   controlPlaneKeyPair.CertBytes(),
+					certificates.SecretPKKey:     controlPlaneKeyPair.PrivateKeyBytes(),
+					certificates.SecretCaCertKey: caKP.CertBytes(),
+				},
+			}
+			serverSecret := corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      server + "-keys",
+					Namespace: environment.FromContext(ctx).Namespace(),
+				},
+				Data: map[string][]byte{
+					certificates.SecretCertKey:   dataPlaneKeyPair.CertBytes(),
+					certificates.SecretPKKey:     dataPlaneKeyPair.PrivateKeyBytes(),
+					certificates.SecretCaCertKey: caKP.CertBytes(),
+				},
+			}
+
+			// Push the secrets to k8s
+			_, err = kubeclient.Get(ctx).CoreV1().Secrets(environment.FromContext(ctx).Namespace()).Create(
+				ctx,
+				&clientSecret,
+				metav1.CreateOptions{},
+			)
+			require.NoError(t, err)
+			_, err = kubeclient.Get(ctx).CoreV1().Secrets(environment.FromContext(ctx).Namespace()).Create(
+				ctx,
+				&serverSecret,
+				metav1.CreateOptions{},
+			)
+			require.NoError(t, err)
+		})
+
+	}
+
+	f.Setup("Start server", conformance_server.StartPod(server, serverImage, port, tls))
 	f.Setup("Wait for server ready", func(ctx context.Context, t feature.T) {
 		k8s.WaitForPodRunningOrFail(ctx, t, server)
 	})
@@ -49,7 +117,7 @@ func ConformanceFeature(clientImage string, serverImage string) *feature.Feature
 		require.NoError(t, err)
 		require.NotEmpty(t, pod.Status.PodIP)
 
-		conformance_client.StartJob(client, clientImage, fmt.Sprintf("%s:%d", pod.Status.PodIP, port))(ctx, t)
+		conformance_client.StartJob(client, clientImage, fmt.Sprintf("%s:%d", pod.Status.PodIP, port), tls)(ctx, t)
 	})
 
 	f.Stable("Send and receive").Must("Job should succeed", func(ctx context.Context, t feature.T) {
