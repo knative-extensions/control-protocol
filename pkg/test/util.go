@@ -88,7 +88,7 @@ func (m *MockTLSDialerFactory) GenerateTLSDialer(*net.Dialer) (*tls.Dialer, erro
 	return (*tls.Dialer)(m), nil
 }
 
-func MustSetupInsecureControlWithPool(t *testing.T, ctx context.Context, opts ...reconciler.ControlPlaneConnectionPoolOption) (*network.ControlServer, *reconciler.ControlPlaneConnectionPool) {
+func MustSetupInsecureControlWithPool(t *testing.T, ctx context.Context, opts ...reconciler.ControlPlaneConnectionPoolOption) (*network.ControlServer, reconciler.ControlPlaneConnectionPool) {
 	serverCtx, serverCancelFn := context.WithCancel(ctx)
 
 	controlServer, err := network.StartInsecureControlServer(serverCtx, network.WithPort(0))
@@ -106,7 +106,7 @@ func MustSetupInsecureControlWithPool(t *testing.T, ctx context.Context, opts ..
 	return controlServer, connectionPool
 }
 
-func MustSetupSecureControlWithPool(t *testing.T, ctx context.Context, opts ...reconciler.ControlPlaneConnectionPoolOption) (*network.ControlServer, *reconciler.ControlPlaneConnectionPool) {
+func MustSetupSecureControlWithPool(t *testing.T, ctx context.Context, opts ...reconciler.ControlPlaneConnectionPoolOption) (*network.ControlServer, reconciler.ControlPlaneConnectionPool) {
 	serverCtx, serverCancelFn := context.WithCancel(ctx)
 
 	serverTlsConf, clientDialer := MustGenerateTestTLSConf(t, ctx)
@@ -142,8 +142,8 @@ func SendReceiveTest(t *testing.T, sender control.Service, receiver control.Serv
 	wg.Wait()
 }
 
-func ConnectionPoolTestCases() map[string]func(t *testing.T, ctx context.Context, opts ...reconciler.ControlPlaneConnectionPoolOption) (*network.ControlServer, *reconciler.ControlPlaneConnectionPool) {
-	return map[string]func(t *testing.T, ctx context.Context, opts ...reconciler.ControlPlaneConnectionPoolOption) (*network.ControlServer, *reconciler.ControlPlaneConnectionPool){
+func ConnectionPoolTestCases() map[string]func(t *testing.T, ctx context.Context, opts ...reconciler.ControlPlaneConnectionPoolOption) (*network.ControlServer, reconciler.ControlPlaneConnectionPool) {
+	return map[string]func(t *testing.T, ctx context.Context, opts ...reconciler.ControlPlaneConnectionPoolOption) (*network.ControlServer, reconciler.ControlPlaneConnectionPool){
 		"InsecureConnectionPool": MustSetupInsecureControlWithPool,
 		"TLSConnectionPool":      MustSetupSecureControlWithPool,
 	}
