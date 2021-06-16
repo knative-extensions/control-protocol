@@ -201,7 +201,7 @@ func TestAsyncCommand_Integration_Failure(t *testing.T) {
 	require.Equal(t, "failure", commandResult.Error)
 }
 
-func setupAsyncCommandNotificationStoreIntegrationTest(t *testing.T) (control.Service, *atomic.Int32, *reconciler.AsyncCommandNotificationStore, types.NamespacedName, string) {
+func setupAsyncCommandNotificationStoreIntegrationTest(t *testing.T) (control.Service, *atomic.Int32, reconciler.AsyncCommandNotificationStore, types.NamespacedName, string) {
 	expectedNamespacedName := types.NamespacedName{Namespace: "hello", Name: "world"}
 	expectedPodIp := "127.0.0.1"
 
