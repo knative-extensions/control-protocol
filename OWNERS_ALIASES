@@ -5,27 +5,29 @@ aliases:
   api-core-wg-leads:
   - dprotaso
   async-component-approvers:
-  - beemarie
+  - bvennam
   - julz
   - maximilien
   autoscaling-wg-leads:
   - markusthoemmes
   - vagababov
   client-wg-leads:
+  - dsimansk
   - navidshaikh
   - rhuss
   client-writers:
+  - dsimansk
   - navidshaikh
   - rhuss
   control-protocol-approvers:
   - devguyio
+  - eric-sap
   - lionelvillard
   - matzew
-  - slinkydeveloper
+  - travis-minke-sap
   - vaikas
   delivery-wg-leads:
   - matzew
-  - slinkydeveloper
   discovery-approvers:
   - lberk
   - n3wscott
@@ -63,7 +65,6 @@ aliases:
   - travis-minke-sap
   eventing-kafka-broker-approvers:
   - pierDipi
-  - slinkydeveloper
   eventing-kafka-mtsource-approvers:
   - steven0711dong
   eventing-natss-approvers:
@@ -81,14 +82,11 @@ aliases:
   eventing-wg-leads:
   - devguyio
   - lionelvillard
-  - vaikas
   eventing-writers:
   - devguyio
   - lionelvillard
   - matzew
   - n3wscott
-  - slinkydeveloper
-  - vaikas
   homebrew-kn-plugins-approvers:
   - dsimansk
   - maximilien
@@ -105,9 +103,18 @@ aliases:
   kn-plugin-event-approvers:
   - cardil
   - rhuss
+  kn-plugin-func-approvers:
+  - lance
+  - lkingland
+  - matejvasek
+  - zroubalik
   kn-plugin-migration-approvers:
   - maximilien
   - zhangtbj
+  kn-plugin-quickstart-approvers:
+  - csantanapr
+  - omerbensaadon
+  - psschwei
   kn-plugin-sample-approvers:
   - maximilien
   - navidshaikh
@@ -125,6 +132,7 @@ aliases:
   - nicolaferraro
   - rhuss
   knative-admin:
+  - ZhiminXiang
   - bsnchan
   - dprotaso
   - evankanderson
@@ -134,7 +142,6 @@ aliases:
   - knative-prow-updater-robot
   - knative-test-reporter-robot
   - markusthoemmes
-  - matzew
   - mbehrendt
   - pmorie
   - rhuss
@@ -153,18 +160,18 @@ aliases:
   - k4leung4
   - lionelvillard
   - markusthoemmes
+  - matzew
   - mikehelmick
   - n3wscott
   - nak3
   - navidshaikh
   - rhuss
-  - slinkydeveloper
   - tcnghia
   - vagababov
   - vaikas
   knative-release-leads:
-  - dprotaso
-  - matzew
+  - ZhiminXiang
+  - evankanderson
   knative-robots:
   - knative-prow-releaser-robot
   - knative-prow-robot
