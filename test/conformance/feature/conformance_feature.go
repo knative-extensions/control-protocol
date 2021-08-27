@@ -19,17 +19,22 @@ package feature
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/control-protocol/pkg/certificates"
-	"knative.dev/control-protocol/test/conformance/resources/conformance_client"
+	"k8s.io/apimachinery/pkg/util/wait"
 	kubeclient "knative.dev/pkg/client/injection/kube/client"
 	"knative.dev/reconciler-test/pkg/environment"
 	"knative.dev/reconciler-test/pkg/feature"
 	"knative.dev/reconciler-test/pkg/k8s"
+
+	"knative.dev/control-protocol/pkg/certificates"
+	"knative.dev/control-protocol/test/conformance/resources/conformance_client"
 
 	"knative.dev/control-protocol/test/conformance/resources/conformance_server"
 )
@@ -110,7 +115,9 @@ func conformanceFeature(featureName string, clientImage string, serverImage stri
 
 	f.Setup("Start server", conformance_server.StartPod(server, serverImage, port, tls))
 	f.Setup("Wait for server ready", func(ctx context.Context, t feature.T) {
-		k8s.WaitForPodRunningOrFail(ctx, t, server)
+		// TODO - DEBUG ONLY - DO NOT MERGE !!!
+		//k8s.WaitForPodRunningOrFail(ctx, t, server)
+		customWaitForPodRunningOrFail(ctx, t, server)
 	})
 	f.Setup("Start client", func(ctx context.Context, t feature.T) {
 		pod, err := kubeclient.Get(ctx).CoreV1().Pods(environment.FromContext(ctx).Namespace()).Get(ctx, server, metav1.GetOptions{})
@@ -134,4 +141,50 @@ func conformanceFeature(featureName string, clientImage string, serverImage stri
 	})
 
 	return f
+}
+
+// TODO - DEBUG ONLY - DO NOT MERGE !!!
+func customWaitForPodRunningOrFail(ctx context.Context, t feature.T, podName string) {
+	log.Println(fmt.Sprintf("podName = %s", podName))
+	log.Println(fmt.Sprintf("namespace = %s", environment.FromContext(ctx).Namespace()))
+	podClient := kubeclient.Get(ctx).CoreV1().Pods(environment.FromContext(ctx).Namespace())
+	p := podClient
+	interval, timeout := k8s.PollTimings(ctx, nil)
+	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
+		p, err := p.Get(ctx, podName, metav1.GetOptions{})
+		if err != nil {
+			log.Println(fmt.Sprintf("*** DEBUG 1 *** p.Get() error = %+v", err))
+			return true, err
+		}
+		return customPodRunning(p), nil // TODO - Expected To Time-Out Here?
+	})
+	if err != nil {
+		log.Println(fmt.Sprintf("*** DEBUG 2 *** wait.PollImmediate() error = %+v", err))
+		sb := strings.Builder{}
+		if p, err := podClient.Get(ctx, podName, metav1.GetOptions{}); err != nil {
+			log.Println(fmt.Sprintf("*** DEBUG 3 *** podClient.Get() error = %+v", err))
+			sb.WriteString(err.Error())
+			sb.WriteString("\n")
+		} else {
+			for _, c := range p.Spec.Containers {
+				if b, err := k8s.PodLogs(ctx, podName, c.Name, environment.FromContext(ctx).Namespace()); err != nil {
+					log.Println(fmt.Sprintf("*** DEBUG 4 *** k8s.PodLogs() error = %+v", err))
+					sb.WriteString(err.Error())
+				} else {
+					sb.Write(b)
+				}
+				sb.WriteString("\n")
+			}
+		}
+		log.Println(fmt.Sprintf("*** DEBUG 5 *** sb = %s", sb.String()))
+		t.Fatalf("Failed while waiting for pod %s running: %+v", podName, errors.WithStack(err)) // TODO - Log "sb" here?
+	} else {
+		log.Println("*** DEBUG 6 *** Pod Detected As Running Or Succeeded!")
+	}
+}
+
+// TODO - DEBUG ONLY - DO NOT MERGE !!!
+func customPodRunning(pod *corev1.Pod) bool {
+	log.Println(fmt.Sprintf("*** DEBUG A *** pod.Status.Phase = %s", pod.Status.Phase))
+	return pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodSucceeded
 }
