@@ -5,7 +5,7 @@ on:
     branches: [ 'main' ]
 
   schedule:
-  - cron: '0 0 * * *'
+  - cron: '0 4 * * *'
 
 defaults:
   run:
@@ -20,10 +20,6 @@ jobs:
     strategy:
       fail-fast: false # Keep running if one leg fails.
       matrix:
-        #        k8s-version:
-        #        - v1.18.15
-        #        - v1.19.7
-        #        - v1.20.2
         k8s-version:
         - v1.19.11
         - v1.20.7
@@ -35,16 +31,6 @@ jobs:
         # Map between K8s and KinD versions.
         # This is attempting to make it a bit clearer what's being tested.
         # See: https://github.com/kubernetes-sigs/kind/releases/tag/v0.10.0
-        #        include:
-        #        - k8s-version: v1.18.15
-        #          kind-version: v0.10.0
-        #          kind-image-sha: sha256:5c1b980c4d0e0e8e7eb9f36f7df525d079a96169c8a8f20d8bd108c0d0889cc4
-        #        - k8s-version: v1.19.7
-        #          kind-version: v0.10.0
-        #          kind-image-sha: sha256:a70639454e97a4b733f9d9b67e12c01f6b0297449d5b9cbbef87473458e26dca
-        #        - k8s-version: v1.20.2
-        #          kind-version: v0.10.0
-        #          kind-image-sha: sha256:8f7ea6e7642c0da54f04a7ee10431549c0257315b3a634f6ef2fecaaedb19bab
         include:
         - k8s-version: v1.19.11
           kind-version: v0.11.1
@@ -151,8 +137,7 @@ jobs:
         export GOFLAGS=-mod=vendor
         export SYSTEM_NAMESPACE=default
         # Run the tests tagged as e2e on the KinD cluster.
-        # TODO - REMOVE "-v" FOR PRODUCTION !!!
-        go test -race -count=1 -parallel=12 -timeout=10m -tags=e2e -v \
+        go test -race -count=1 -parallel=12 -timeout=10m -tags=e2e \
            ${{ matrix.test-suite }} ${{ matrix.extra-test-flags }}
 
     - name: Collect system diagnostics
