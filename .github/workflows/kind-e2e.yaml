@@ -133,7 +133,7 @@ jobs:
       run: |
         set -x
 
-        kind create cluster --config kind.yaml
+        kind create cluster --config=kind.yaml
 
     - name: Upload Test Images
       run: |

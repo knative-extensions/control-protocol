@@ -194,6 +194,7 @@ func customWaitForPodRunningOrFail(ctx context.Context, t feature.T, podName str
 		}
 		log.Println(fmt.Sprintf("*** DEBUG 5 *** sb = %s", sb.String()))
 		customListEvents(ctx)
+		customListNodes(ctx)
 		t.Fatalf("Failed while waiting for pod %s running: %+v", podName, errors.WithStack(err)) // TODO - Log "sb" here?
 	} else {
 		log.Println("*** DEBUG 6 *** Pod Detected As Running Or Succeeded!")
@@ -214,8 +215,19 @@ func customListEvents(ctx context.Context) {
 		log.Println(fmt.Sprintf("*** DEBUG B *** Failed to list events err = %+v", err))
 		return
 	}
-
 	for _, event := range events.Items {
 		log.Println(fmt.Sprintf("*** DEBUG B *** event = %s", event.String()))
+	}
+}
+
+// TODO - DEBUG ONLY - DO NOT MERGE !!!
+func customListNodes(ctx context.Context) {
+	nodes, err := kubeclient.Get(ctx).CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		log.Println(fmt.Sprintf("*** DEBUG C *** Failed to list nodes err = %+v", err))
+		return
+	}
+	for _, node := range nodes.Items {
+		log.Println(fmt.Sprintf("*** DEBUG C *** node = %s", node.String()))
 	}
 }
