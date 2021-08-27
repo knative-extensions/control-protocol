@@ -151,7 +151,8 @@ jobs:
         export GOFLAGS=-mod=vendor
         export SYSTEM_NAMESPACE=default
         # Run the tests tagged as e2e on the KinD cluster.
-        go test -race -count=1 -parallel=12 -timeout=10m -tags=e2e \
+        # TODO - REMOVE "-v" FOR PRODUCTION !!!
+        go test -race -count=1 -parallel=12 -timeout=10m -tags=e2e -v \
            ${{ matrix.test-suite }} ${{ matrix.extra-test-flags }}
 
     - name: Collect system diagnostics
