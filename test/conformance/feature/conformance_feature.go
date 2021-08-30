@@ -24,12 +24,13 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/control-protocol/pkg/certificates"
-	"knative.dev/control-protocol/test/conformance/resources/conformance_client"
 	kubeclient "knative.dev/pkg/client/injection/kube/client"
 	"knative.dev/reconciler-test/pkg/environment"
 	"knative.dev/reconciler-test/pkg/feature"
 	"knative.dev/reconciler-test/pkg/k8s"
+
+	"knative.dev/control-protocol/pkg/certificates"
+	"knative.dev/control-protocol/test/conformance/resources/conformance_client"
 
 	"knative.dev/control-protocol/test/conformance/resources/conformance_server"
 )
