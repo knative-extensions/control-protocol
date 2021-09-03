@@ -4,9 +4,6 @@ on:
   pull_request:
     branches: [ 'main' ]
 
-  schedule:
-  - cron: '0 4 * * *'
-
 defaults:
   run:
     shell: bash
