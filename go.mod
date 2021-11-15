@@ -10,7 +10,7 @@ require (
 	k8s.io/api v0.21.4
 	k8s.io/apimachinery v0.21.4
 	k8s.io/client-go v0.21.4
-	knative.dev/hack v0.0.0-20211105231158-29f86c2653b5
-	knative.dev/pkg v0.0.0-20211108064904-3cc697a3cb09
-	knative.dev/reconciler-test v0.0.0-20211101213739-c5f938aa9974
+	knative.dev/hack v0.0.0-20211112192837-128cf0150a69
+	knative.dev/pkg v0.0.0-20211115071955-517ef0292b53
+	knative.dev/reconciler-test v0.0.0-20211112132636-ae9e2e21972f
 )

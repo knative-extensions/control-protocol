@@ -761,10 +761,10 @@ k8s.io/kube-openapi/pkg/util/sets
 k8s.io/utils/buffer
 k8s.io/utils/integer
 k8s.io/utils/trace
-# knative.dev/hack v0.0.0-20211105231158-29f86c2653b5
+# knative.dev/hack v0.0.0-20211112192837-128cf0150a69
 ## explicit
 knative.dev/hack
-# knative.dev/pkg v0.0.0-20211108064904-3cc697a3cb09
+# knative.dev/pkg v0.0.0-20211115071955-517ef0292b53
 ## explicit
 knative.dev/pkg/apis
 knative.dev/pkg/apis/duck
@@ -815,7 +815,7 @@ knative.dev/pkg/tracing/config
 knative.dev/pkg/tracing/propagation
 knative.dev/pkg/tracing/propagation/tracecontextb3
 knative.dev/pkg/tracker
-# knative.dev/reconciler-test v0.0.0-20211101213739-c5f938aa9974
+# knative.dev/reconciler-test v0.0.0-20211112132636-ae9e2e21972f
 ## explicit
 knative.dev/reconciler-test/pkg/environment
 knative.dev/reconciler-test/pkg/feature
