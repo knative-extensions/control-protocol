@@ -124,6 +124,7 @@ func conformanceFeature(featureName string, clientImage string, serverImage stri
 	f.Stable("Send and receive").Must("Job should succeed", func(ctx context.Context, t feature.T) {
 		require.NoError(t, k8s.WaitUntilJobDone(
 			ctx,
+			t,
 			kubeclient.Get(ctx),
 			environment.FromContext(ctx).Namespace(),
 			client,
