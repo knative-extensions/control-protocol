@@ -12,5 +12,5 @@ require (
 	k8s.io/client-go v0.21.4
 	knative.dev/hack v0.0.0-20211203062838-e11ac125e707
 	knative.dev/pkg v0.0.0-20211206113427-18589ac7627e
-	knative.dev/reconciler-test v0.0.0-20211206091826-80584b570590
+	knative.dev/reconciler-test v0.0.0-20211207070557-0d138a88867b
 )
