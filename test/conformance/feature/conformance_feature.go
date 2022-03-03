@@ -125,8 +125,6 @@ func conformanceFeature(featureName string, clientImage string, serverImage stri
 		require.NoError(t, k8s.WaitUntilJobDone(
 			ctx,
 			t,
-			kubeclient.Get(ctx),
-			environment.FromContext(ctx).Namespace(),
 			client,
 		))
 	}).Must("Pod shouldn't be failed", func(ctx context.Context, t feature.T) {
