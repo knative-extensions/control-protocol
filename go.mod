@@ -4,15 +4,16 @@ go 1.17
 
 require (
 	github.com/google/uuid v1.3.0
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.1
-	k8s.io/api v0.23.4
-	k8s.io/apimachinery v0.23.4
-	k8s.io/client-go v0.23.4
-	knative.dev/hack v0.0.0-20220318020218-14f832e506f8
-	knative.dev/pkg v0.0.0-20220318185521-e6e3cf03d765
-	knative.dev/reconciler-test v0.0.0-20220321082547-afd9ca7f6603
+	k8s.io/api v0.23.5
+	k8s.io/apimachinery v0.23.5
+	k8s.io/client-go v0.23.5
+	knative.dev/hack v0.0.0-20220328133751-f06773764ce3
+	knative.dev/pkg v0.0.0-20220329144915-0a1ec2e0d46c
+	knative.dev/reconciler-test v0.0.0-20220328072550-7d32310c9b3a
 )
 
 require (
@@ -43,7 +44,6 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -82,10 +82,10 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/code-generator v0.23.4 // indirect
+	k8s.io/code-generator v0.23.5 // indirect
 	k8s.io/gengo v0.0.0-20220307231824-4627b89bbf1b // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/klog/v2 v2.40.2-0.20220227211518-7ea6d6adb645 // indirect
+	k8s.io/klog/v2 v2.60.1-0.20220317184644-43cc75f9ae89 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
