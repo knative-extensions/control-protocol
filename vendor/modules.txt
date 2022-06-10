@@ -863,10 +863,10 @@ k8s.io/utils/integer
 k8s.io/utils/internal/third_party/forked/golang/net
 k8s.io/utils/net
 k8s.io/utils/trace
-# knative.dev/hack v0.0.0-20220524153203-12d3e2a7addc
+# knative.dev/hack v0.0.0-20220610014127-dc6c287516dc
 ## explicit; go 1.14
 knative.dev/hack
-# knative.dev/pkg v0.0.0-20220524202603-19adf798efb8
+# knative.dev/pkg v0.0.0-20220610014025-7d607d643ee2
 ## explicit; go 1.17
 knative.dev/pkg/apis
 knative.dev/pkg/apis/duck
@@ -918,7 +918,7 @@ knative.dev/pkg/tracing/config
 knative.dev/pkg/tracing/propagation
 knative.dev/pkg/tracing/propagation/tracecontextb3
 knative.dev/pkg/tracker
-# knative.dev/reconciler-test v0.0.0-20220524205904-f750f80bfc7e
+# knative.dev/reconciler-test v0.0.0-20220610014025-b62b10257cbf
 ## explicit; go 1.17
 knative.dev/reconciler-test/pkg/environment
 knative.dev/reconciler-test/pkg/feature
