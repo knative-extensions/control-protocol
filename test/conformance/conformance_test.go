@@ -44,7 +44,7 @@ func TestConformance(t *testing.T) {
 }
 
 func TestTLSConformance(t *testing.T) {
-	ctx, env := global.Environment()
+	ctx, env := global.Environment(environment.WithTestLogger(t))
 
 	conformanceGoClient := test.ImagePath("conformance-go-client")
 	conformanceGoServer := test.ImagePath("conformance-go-server")
