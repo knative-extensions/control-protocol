@@ -915,7 +915,7 @@ knative.dev/pkg/tracing/config
 knative.dev/pkg/tracing/propagation
 knative.dev/pkg/tracing/propagation/tracecontextb3
 knative.dev/pkg/tracker
-# knative.dev/reconciler-test v0.0.0-20220705155206-f05db88effbe => github.com/cardil/knative-reconciler-test v0.0.0-20220715181934-169264f8ba23
+# knative.dev/reconciler-test v0.0.0-20220722111920-0cfde63b455a
 ## explicit; go 1.17
 knative.dev/reconciler-test/pkg/environment
 knative.dev/reconciler-test/pkg/feature
@@ -938,4 +938,3 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.3.0
 ## explicit; go 1.12
 sigs.k8s.io/yaml
-# knative.dev/reconciler-test => github.com/cardil/knative-reconciler-test v0.0.0-20220715181934-169264f8ba23
