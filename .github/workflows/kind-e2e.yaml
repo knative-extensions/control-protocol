@@ -53,10 +53,10 @@ jobs:
       ARTIFACTS: ${{ github.workspace }}/artifacts
 
     steps:
-    - name: Set up Go 1.17.x
+    - name: Set up Go 1.18.x
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17.x
+        go-version: 1.18.x
 
     - name: Install Dependencies
       working-directory: ./
