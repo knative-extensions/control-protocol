@@ -18,10 +18,14 @@ package conformance_client
 
 import (
 	"context"
+	"embed"
 
 	"knative.dev/reconciler-test/pkg/feature"
 	"knative.dev/reconciler-test/pkg/manifest"
 )
+
+//go:embed job.yaml
+var jobTemplate embed.FS
 
 func StartJob(name string, image string, host string, tls bool) feature.StepFn {
 	cfg := map[string]interface{}{
@@ -32,7 +36,7 @@ func StartJob(name string, image string, host string, tls bool) feature.StepFn {
 	}
 
 	return func(ctx context.Context, t feature.T) {
-		if _, err := manifest.InstallLocalYaml(ctx, cfg); err != nil {
+		if _, err := manifest.InstallYamlFS(ctx, jobTemplate, cfg); err != nil {
 			t.Fatal(err)
 		}
 	}
