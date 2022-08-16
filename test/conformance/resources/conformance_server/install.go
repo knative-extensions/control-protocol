@@ -18,10 +18,14 @@ package conformance_server
 
 import (
 	"context"
+	"embed"
 
 	"knative.dev/reconciler-test/pkg/feature"
 	"knative.dev/reconciler-test/pkg/manifest"
 )
+
+//go:embed pod.yaml
+var podYAML embed.FS
 
 func StartPod(name string, image string, port int, tls bool) feature.StepFn {
 	cfg := map[string]interface{}{
@@ -32,7 +36,7 @@ func StartPod(name string, image string, port int, tls bool) feature.StepFn {
 	}
 
 	return func(ctx context.Context, t feature.T) {
-		if _, err := manifest.InstallLocalYaml(ctx, cfg); err != nil {
+		if _, err := manifest.InstallYamlFS(ctx, podYAML, cfg); err != nil {
 			t.Fatal(err)
 		}
 	}
