@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"knative.dev/control-protocol/test/conformance/feature"
-	"knative.dev/pkg/test"
 	"knative.dev/reconciler-test/pkg/environment"
 )
 
@@ -32,25 +31,13 @@ func TestConformance(t *testing.T) {
 		environment.Managed(t),
 	)
 
-	conformanceGoClient := test.ImagePath("conformance-go-client")
-	conformanceGoServer := test.ImagePath("conformance-go-server")
-
-	env.Test(ctx, t, feature.ConformanceFeature(
-		conformanceGoClient,
-		conformanceGoServer,
-	))
-
-	env.Finish()
+	env.Test(ctx, t, feature.ConformanceFeature())
 }
 
 func TestTLSConformance(t *testing.T) {
-	ctx, env := global.Environment(environment.WithTestLogger(t))
+	ctx, env := global.Environment(
+		environment.Managed(t),
+	)
 
-	conformanceGoClient := test.ImagePath("conformance-go-client")
-	conformanceGoServer := test.ImagePath("conformance-go-server")
-
-	env.Test(ctx, t, feature.TLSConformanceFeature(
-		conformanceGoClient,
-		conformanceGoServer,
-	))
+	env.Test(ctx, t, feature.TLSConformanceFeature())
 }

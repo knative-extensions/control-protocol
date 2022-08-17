@@ -20,6 +20,7 @@ import (
 	"context"
 	"embed"
 
+	"knative.dev/reconciler-test/pkg/environment"
 	"knative.dev/reconciler-test/pkg/feature"
 	"knative.dev/reconciler-test/pkg/manifest"
 )
@@ -27,17 +28,26 @@ import (
 //go:embed *.yaml
 var yamls embed.FS
 
-func StartJob(name string, image string, host string, tls bool) feature.StepFn {
+func StartJob(name string, host string, tls bool) feature.StepFn {
 	cfg := map[string]interface{}{
-		"name":  name,
-		"host":  host,
-		"image": image,
-		"tls":   tls,
+		"name": name,
+		"host": host,
+		"tls":  tls,
 	}
 
 	return func(ctx context.Context, t feature.T) {
+		if err := registerImage(ctx); err != nil {
+			t.Fatal(err)
+		}
 		if _, err := manifest.InstallYamlFS(ctx, yamls, cfg); err != nil {
 			t.Fatal(err)
 		}
 	}
+}
+
+func registerImage(ctx context.Context) error {
+	im := manifest.ImagesFromFS(ctx, yamls)
+	reg := environment.RegisterPackage(im...)
+	_, err := reg(ctx, environment.FromContext(ctx))
+	return err
 }

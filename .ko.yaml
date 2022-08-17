@@ -1,0 +1,9 @@
+builds:
+  - id: conformance-go-client
+    main: ./test/test_images/conformance-go-client
+    env:
+      - CGO_ENABLED=0
+  - id: conformance-go-server
+    main: ./test/test_images/conformance-go-server
+    env:
+      - CGO_ENABLED=0
