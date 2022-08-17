@@ -35,15 +35,15 @@ import (
 	"knative.dev/control-protocol/test/conformance/resources/conformance_server"
 )
 
-func ConformanceFeature(clientImage string, serverImage string) *feature.Feature {
-	return conformanceFeature("ConformanceFeature", clientImage, serverImage, false)
+func ConformanceFeature() *feature.Feature {
+	return conformanceFeature("ConformanceFeature", false)
 }
 
-func TLSConformanceFeature(clientImage string, serverImage string) *feature.Feature {
-	return conformanceFeature("TLSConformanceFeature", clientImage, serverImage, true)
+func TLSConformanceFeature() *feature.Feature {
+	return conformanceFeature("TLSConformanceFeature", true)
 }
 
-func conformanceFeature(featureName string, clientImage string, serverImage string, tls bool) *feature.Feature {
+func conformanceFeature(featureName string, tls bool) *feature.Feature {
 	f := feature.NewFeatureNamed(featureName)
 
 	client := "client"
@@ -109,7 +109,7 @@ func conformanceFeature(featureName string, clientImage string, serverImage stri
 
 	}
 
-	f.Setup("Start server", conformance_server.StartPod(server, serverImage, port, tls))
+	f.Setup("Start server", conformance_server.StartPod(server, port, tls))
 	f.Setup("Wait for server ready", func(ctx context.Context, t feature.T) {
 		k8s.WaitForPodRunningOrFail(ctx, t, server)
 	})
@@ -118,7 +118,7 @@ func conformanceFeature(featureName string, clientImage string, serverImage stri
 		require.NoError(t, err)
 		require.NotEmpty(t, pod.Status.PodIP)
 
-		conformance_client.StartJob(client, clientImage, fmt.Sprintf("%s:%d", pod.Status.PodIP, port), tls)(ctx, t)
+		conformance_client.StartJob(client, fmt.Sprintf("%s:%d", pod.Status.PodIP, port), tls)(ctx, t)
 	})
 
 	f.Stable("Send and receive").Must("Job should succeed", func(ctx context.Context, t feature.T) {

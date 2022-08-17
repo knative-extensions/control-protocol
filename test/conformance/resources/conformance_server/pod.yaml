@@ -29,7 +29,7 @@ spec:
   {{ end }}
   containers:
     - name: conformance-server
-      image: {{ .image }}
+      image: ko://knative.dev/control-protocol/test/test_images/conformance-go-server
       imagePullPolicy: "IfNotPresent"
       {{ if .tls }}
       volumeMounts:

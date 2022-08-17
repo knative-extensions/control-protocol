@@ -7,7 +7,6 @@ on:
 defaults:
   run:
     shell: bash
-    working-directory: ./src/knative.dev/control-protocol
 
 jobs:
 
@@ -43,8 +42,6 @@ jobs:
         - test-suite: ./test/conformance
           extra-test-flags: ""
     env:
-      GOPATH: ${{ github.workspace }}
-      GO111MODULE: off
       KO_DOCKER_REPO: kind.local
       SYSTEM_NAMESPACE: default
       # Use a semi-random cluster suffix, but somewhat predictable
@@ -69,8 +66,6 @@ jobs:
 
     - name: Check out code onto GOPATH
       uses: actions/checkout@v2
-      with:
-        path: ./src/knative.dev/control-protocol
 
     - name: Install KinD
       run: |
@@ -86,7 +81,6 @@ jobs:
         sudo mv kind /usr/local/bin
 
     - name: Configure KinD Cluster
-      working-directory: ./src/knative.dev/control-protocol
       run: |
         set -x
 
@@ -117,7 +111,6 @@ jobs:
         EOF
 
     - name: Create KinD Cluster
-      working-directory: ./src/knative.dev/control-protocol
       run: |
         set -x
 
@@ -130,9 +123,6 @@ jobs:
 
     - name: Run e2e Tests
       run: |
-        export GO111MODULE=on
-        export GOFLAGS=-mod=vendor
-        export SYSTEM_NAMESPACE=default
         # Run the tests tagged as e2e on the KinD cluster.
         go test -race -count=1 -parallel=12 -timeout=10m -tags=e2e \
            ${{ matrix.test-suite }} ${{ matrix.extra-test-flags }}

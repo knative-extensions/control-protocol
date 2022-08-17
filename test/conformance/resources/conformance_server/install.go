@@ -20,24 +20,34 @@ import (
 	"context"
 	"embed"
 
+	"knative.dev/reconciler-test/pkg/environment"
 	"knative.dev/reconciler-test/pkg/feature"
 	"knative.dev/reconciler-test/pkg/manifest"
 )
 
-//go:embed pod.yaml
-var podYAML embed.FS
+//go:embed *.yaml
+var yamls embed.FS
 
-func StartPod(name string, image string, port int, tls bool) feature.StepFn {
+func StartPod(name string, port int, tls bool) feature.StepFn {
 	cfg := map[string]interface{}{
-		"name":  name,
-		"port":  port,
-		"image": image,
-		"tls":   tls,
+		"name": name,
+		"port": port,
+		"tls":  tls,
 	}
 
 	return func(ctx context.Context, t feature.T) {
-		if _, err := manifest.InstallYamlFS(ctx, podYAML, cfg); err != nil {
+		if err := registerImage(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := manifest.InstallYamlFS(ctx, yamls, cfg); err != nil {
 			t.Fatal(err)
 		}
 	}
+}
+
+func registerImage(ctx context.Context) error {
+	im := manifest.ImagesFromFS(ctx, yamls)
+	reg := environment.RegisterPackage(im...)
+	_, err := reg(ctx, environment.FromContext(ctx))
+	return err
 }
