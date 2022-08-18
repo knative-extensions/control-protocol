@@ -1,0 +1,29 @@
+# Copyright 2022 The Knative Authors.
+
+name: Repro CGO
+
+on:
+  push:
+    branches: [ 'main', 'release-*' ]
+
+  pull_request:
+    branches: [ 'main', 'release-*' ]
+
+jobs:
+  repro-cgo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Go 1.18.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18.x
+
+      - name: Check out code onto GOPATH
+        uses: actions/checkout@v2
+
+      - name: Run CGO Test
+        run: |
+          # Run the test as it is executed by Goland IDE.
+          go test -c -o /tmp/GoLand/___go_test_knative_dev_control_protocol_test_cgo.test knative.dev/control-protocol/test/cgo
+          go tool test2json -t /tmp/GoLand/___go_test_knative_dev_control_protocol_test_cgo.test -test.v -test.paniconexit0
