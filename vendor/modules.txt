@@ -1104,7 +1104,7 @@ knative.dev/pkg/test/prow
 knative.dev/pkg/test/zipkin
 knative.dev/pkg/tracing/config
 knative.dev/pkg/tracker
-# knative.dev/reconciler-test v0.0.0-20221006134333-0a1020d0acdc
+# knative.dev/reconciler-test v0.0.0-20221013021152-37c944e2d928
 ## explicit; go 1.18
 knative.dev/reconciler-test/pkg/environment
 knative.dev/reconciler-test/pkg/feature
