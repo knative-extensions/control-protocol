@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/golang-lru v0.5.4
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.19.1
 	k8s.io/api v0.25.2
@@ -13,7 +13,7 @@ require (
 	k8s.io/client-go v0.25.2
 	knative.dev/hack v0.0.0-20221010154335-3fdc50b9c24a
 	knative.dev/pkg v0.0.0-20221011175852-714b7630a836
-	knative.dev/reconciler-test v0.0.0-20221013021152-37c944e2d928
+	knative.dev/reconciler-test v0.0.0-20221017014457-090970c9ca3c
 )
 
 require (
@@ -27,7 +27,7 @@ require (
 	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/cloudevents/sdk-go/v2 v2.4.1 // indirect
+	github.com/cloudevents/sdk-go/v2 v2.12.0 // indirect
 	github.com/cncf/udpa/go v0.0.0-20210930031921-04548b0d99d4 // indirect
 	github.com/cncf/xds/go v0.0.0-20211011173535-cb28da3451f1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
