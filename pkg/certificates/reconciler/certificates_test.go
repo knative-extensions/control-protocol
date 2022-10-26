@@ -72,8 +72,10 @@ func TestReconcile(t *testing.T) {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			certificates.SecretCertKey: caKP.CertBytes(),
-			certificates.SecretPKKey:   caKP.PrivateKeyBytes(),
+			certificates.SecretCertKey:  caKP.CertBytes(),
+			certificates.SecretPKKey:    caKP.PrivateKeyBytes(),
+			certificates.CertName:       caKP.CertBytes(),
+			certificates.PrivateKeyName: caKP.PrivateKeyBytes(),
 		},
 	}
 
@@ -91,6 +93,9 @@ func TestReconcile(t *testing.T) {
 			certificates.SecretCaCertKey: caKP.CertBytes(),
 			certificates.SecretCertKey:   controlPlaneKP.CertBytes(),
 			certificates.SecretPKKey:     controlPlaneKP.PrivateKeyBytes(),
+			certificates.CaCertName:      caKP.CertBytes(),
+			certificates.CertName:        controlPlaneKP.CertBytes(),
+			certificates.PrivateKeyName:  controlPlaneKP.PrivateKeyBytes(),
 		},
 	}
 
@@ -108,6 +113,9 @@ func TestReconcile(t *testing.T) {
 			certificates.SecretCaCertKey: caKP.CertBytes(),
 			certificates.SecretCertKey:   dataPlaneKP.CertBytes(),
 			certificates.SecretPKKey:     dataPlaneKP.PrivateKeyBytes(),
+			certificates.CaCertName:      caKP.CertBytes(),
+			certificates.CertName:        controlPlaneKP.CertBytes(),
+			certificates.PrivateKeyName:  controlPlaneKP.PrivateKeyBytes(),
 		},
 	}
 
@@ -315,16 +323,26 @@ func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, 
 }
 
 func validCACert(t *testing.T, secret *corev1.Secret) {
-	require.Contains(t, secret.Data, certificates.SecretPKKey)
-	require.Contains(t, secret.Data, certificates.SecretCertKey)
-	cert, pk, err := certificates.ParseCert(secret.Data[certificates.SecretCertKey], secret.Data[certificates.SecretPKKey])
+	require.Contains(t, secret.Data, certificates.PrivateKeyName)
+	require.Contains(t, secret.Data, certificates.CertName)
+	cert, pk, err := certificates.ParseCert(secret.Data[certificates.CertName], secret.Data[certificates.PrivateKeyName])
 	require.NotNil(t, cert)
 	require.NotNil(t, pk)
 	require.NoError(t, err)
+
+	require.Contains(t, secret.Data, certificates.SecretPKKey)
+	require.Contains(t, secret.Data, certificates.SecretCertKey)
+	cert, pk, err = certificates.ParseCert(secret.Data[certificates.SecretCertKey], secret.Data[certificates.SecretPKKey])
+	require.NotNil(t, cert)
+	require.NotNil(t, pk)
+	require.NoError(t, err)
+
 }
 
 func validDataPlaneCert(t *testing.T, secret *corev1.Secret) {
+	require.Contains(t, secret.Data, certificates.CaCertName)
 	require.Contains(t, secret.Data, certificates.SecretCaCertKey)
+
 	validCACert(t, secret)
 }
 
