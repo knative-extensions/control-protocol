@@ -30,29 +30,15 @@ import (
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	record "k8s.io/client-go/tools/record"
 	client "knative.dev/pkg/client/injection/kube/client"
-	secretreconciler "knative.dev/pkg/client/injection/kube/reconciler/core/v1/secret"
 	controller "knative.dev/pkg/controller"
 	logging "knative.dev/pkg/logging"
 	logkey "knative.dev/pkg/logging/logkey"
-	pkgreconciler "knative.dev/pkg/reconciler"
 )
 
 const (
 	defaultControllerAgentName = "secret-controller"
 	defaultFinalizerName       = "secrets.core"
 )
-
-// Interface defines the strongly typed interfaces to be implemented by a
-// controller reconciling v1.Secret.
-type Interface interface {
-	// ReconcileKind implements custom logic to reconcile v1.Secret. Any changes
-	// to the objects .Status or .Finalizers will be propagated to the stored
-	// object. It is recommended that implementors do not call any update calls
-	// for the Kind inside of ReconcileKind, it is the responsibility of the calling
-	// controller to propagate those properties. The resource passed to ReconcileKind
-	// will always have an empty deletion timestamp.
-	ReconcileKind(ctx context.Context, o *corev1.Secret) pkgreconciler.Event
-}
 
 // NewFilteredImpl returns a controller.Impl that handles queuing and feeding work from
 // the queue through an implementation of controller.Reconciler, delegating to
@@ -88,7 +74,7 @@ func NewFilteredImpl(ctx context.Context, r Interface, secretInformer informersv
 		}()
 	}
 
-	rec := secretreconciler.NewReconciler(ctx, logger, client.Get(ctx), lister, recorder, r, options...)
+	rec := NewReconciler(ctx, logger, client.Get(ctx), lister, recorder, r, options...)
 
 	ctrType := reflect.TypeOf(r).Elem()
 	ctrTypeName := fmt.Sprintf("%s.%s", ctrType.PkgPath(), ctrType.Name())
