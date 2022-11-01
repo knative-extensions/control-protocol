@@ -30,8 +30,6 @@ import (
 	fakekubeclient "knative.dev/pkg/client/injection/kube/client/fake"
 	fakesecretinformer "knative.dev/pkg/client/injection/kube/informers/core/v1/secret/filtered/fake"
 
-	//_ "knative.dev/pkg/client/injection/kube/informers/factory/fake"
-	//_ "knative.dev/pkg/client/injection/kube/informers/core/v1/secret/fake"
 	filteredFactory "knative.dev/pkg/client/injection/kube/informers/factory/filtered"
 	_ "knative.dev/pkg/client/injection/kube/informers/factory/filtered/fake"
 	"knative.dev/pkg/configmap"
