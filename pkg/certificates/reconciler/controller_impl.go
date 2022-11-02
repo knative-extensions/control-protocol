@@ -55,6 +55,27 @@ func NewFilteredImpl(ctx context.Context, r Interface, secretInformer informersv
 	lister := secretInformer.Lister()
 
 	agentName := defaultControllerAgentName
+	recorder := createRecorder(ctx, agentName)
+
+	rec := NewReconciler(ctx, logger, client.Get(ctx), lister, recorder, r, options...)
+
+	ctrType := reflect.TypeOf(r).Elem()
+	ctrTypeName := fmt.Sprintf("%s.%s", ctrType.PkgPath(), ctrType.Name())
+	ctrTypeName = strings.ReplaceAll(ctrTypeName, "/", ".")
+
+	logger = logger.With(
+		zap.String(logkey.ControllerType, ctrTypeName),
+		zap.String(logkey.Kind, "core.Secret"),
+	)
+
+	impl := controller.NewContext(ctx, rec, controller.ControllerOptions{WorkQueueName: ctrTypeName, Logger: logger})
+
+	return impl
+}
+
+func createRecorder(ctx context.Context, agentName string) record.EventRecorder {
+	logger := logging.FromContext(ctx)
+
 	recorder := controller.GetEventRecorder(ctx)
 	if recorder == nil {
 		// Create event broadcaster
@@ -74,20 +95,7 @@ func NewFilteredImpl(ctx context.Context, r Interface, secretInformer informersv
 		}()
 	}
 
-	rec := NewReconciler(ctx, logger, client.Get(ctx), lister, recorder, r, options...)
-
-	ctrType := reflect.TypeOf(r).Elem()
-	ctrTypeName := fmt.Sprintf("%s.%s", ctrType.PkgPath(), ctrType.Name())
-	ctrTypeName = strings.ReplaceAll(ctrTypeName, "/", ".")
-
-	logger = logger.With(
-		zap.String(logkey.ControllerType, ctrTypeName),
-		zap.String(logkey.Kind, "core.Secret"),
-	)
-
-	impl := controller.NewContext(ctx, rec, controller.ControllerOptions{WorkQueueName: ctrTypeName, Logger: logger})
-
-	return impl
+	return recorder
 }
 
 func init() {
