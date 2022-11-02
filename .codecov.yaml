@@ -4,3 +4,5 @@ ignore:
   - "vendor"
   - "hack"
   - "test"
+  - "pkg/certificate/reconciler/controller_impl.go" # file copied over from pkg repo
+  - "pkg/certificate/reconciler/reconciler.go" # file copied over from pkg repo
