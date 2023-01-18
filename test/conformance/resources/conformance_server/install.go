@@ -22,6 +22,7 @@ import (
 
 	"knative.dev/reconciler-test/pkg/environment"
 	"knative.dev/reconciler-test/pkg/feature"
+	"knative.dev/reconciler-test/pkg/k8s"
 	"knative.dev/reconciler-test/pkg/manifest"
 )
 
@@ -42,6 +43,8 @@ func StartPod(name string, port int, tls bool) feature.StepFn {
 		if _, err := manifest.InstallYamlFS(ctx, yamls, cfg); err != nil {
 			t.Fatal(err)
 		}
+
+		k8s.WaitForPodRunningOrFail(ctx, t, name)
 	}
 }
 

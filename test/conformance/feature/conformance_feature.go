@@ -110,10 +110,8 @@ func conformanceFeature(featureName string, tls bool) *feature.Feature {
 	}
 
 	f.Setup("Start server", conformance_server.StartPod(server, port, tls))
-	f.Setup("Wait for server ready", func(ctx context.Context, t feature.T) {
-		k8s.WaitForPodRunningOrFail(ctx, t, server)
-	})
-	f.Setup("Start client", func(ctx context.Context, t feature.T) {
+
+	f.Requirement("Start client", func(ctx context.Context, t feature.T) {
 		pod, err := kubeclient.Get(ctx).CoreV1().Pods(environment.FromContext(ctx).Namespace()).Get(ctx, server, metav1.GetOptions{})
 		require.NoError(t, err)
 		require.NotEmpty(t, pod.Status.PodIP)
