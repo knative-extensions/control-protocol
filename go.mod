@@ -13,7 +13,7 @@ require (
 	k8s.io/client-go v0.25.4
 	knative.dev/hack v0.0.0-20230113013652-c7cfcb062de9
 	knative.dev/pkg v0.0.0-20230117181655-247510c00e9d
-	knative.dev/reconciler-test v0.0.0-20230117204655-f83270bba2ac
+	knative.dev/reconciler-test v0.0.0-20230120192401-894bc7013c23
 )
 
 require (
