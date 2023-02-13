@@ -28,8 +28,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	fakekubeclient "knative.dev/pkg/client/injection/kube/client/fake"
-	fakesecretinformer "knative.dev/pkg/client/injection/kube/informers/core/v1/secret/fake"
-	_ "knative.dev/pkg/client/injection/kube/informers/factory/fake"
+	fakesecretinformer "knative.dev/pkg/client/injection/kube/informers/core/v1/secret/filtered/fake"
+
+	filteredFactory "knative.dev/pkg/client/injection/kube/informers/factory/filtered"
+	_ "knative.dev/pkg/client/injection/kube/informers/factory/filtered/fake"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/injection"
@@ -41,7 +43,9 @@ import (
 )
 
 func setupTest(t *testing.T, ctor injection.ControllerConstructor) (context.Context, *controller.Impl) {
-	ctx, cf, _ := SetupFakeContextWithCancel(t)
+	ctx, cf, _ := SetupFakeContextWithCancel(t, func(ctx context.Context) context.Context {
+		return filteredFactory.WithSelectors(ctx, "my-ctrl")
+	})
 	t.Cleanup(cf)
 
 	configMapWatcher := &configmap.ManualWatcher{Namespace: system.Namespace()}
@@ -269,7 +273,7 @@ func TestReconcile(t *testing.T) {
 			for _, s := range test.objects {
 				_, err := fakekubeclient.Get(ctx).CoreV1().Secrets(s.Namespace).Create(ctx, s, metav1.CreateOptions{})
 				require.NoError(t, err)
-				require.NoError(t, fakesecretinformer.Get(ctx).Informer().GetIndexer().Add(s))
+				require.NoError(t, fakesecretinformer.Get(ctx, labelName).Informer().GetIndexer().Add(s))
 			}
 
 			require.NoError(t, ctrl.Reconciler.Reconcile(ctx, test.key))
@@ -278,7 +282,7 @@ func TestReconcile(t *testing.T) {
 				secrets, _ := fakekubeclient.Get(ctx).CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
 				for _, s := range secrets.Items {
 					s := (&s).DeepCopy()
-					require.NoError(t, fakesecretinformer.Get(ctx).Informer().GetIndexer().Update(s))
+					require.NoError(t, fakesecretinformer.Get(ctx, labelName).Informer().GetIndexer().Update(s))
 				}
 				// Reconcile again
 				require.NoError(t, ctrl.Reconciler.Reconcile(ctx, test.key))
