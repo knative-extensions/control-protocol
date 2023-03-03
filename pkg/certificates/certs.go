@@ -95,8 +95,8 @@ func createServerCertTemplate(expirationInterval time.Duration, namespace string
 }
 
 // Create cert template that we can use on the client for TLS
-func createClientCertTemplate(expirationInterval time.Duration) (*x509.Certificate, error) {
-	clientCert, err := createCertTemplate(expirationInterval, "")
+func createClientCertTemplate(expirationInterval time.Duration, namespace string) (*x509.Certificate, error) {
+	clientCert, err := createCertTemplate(expirationInterval, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func CreateCACerts(ctx context.Context, expirationInterval time.Duration) (*KeyP
 }
 
 // CreateControlPlaneCert generates the certificate for the client
-func CreateControlPlaneCert(ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, expirationInterval time.Duration) (*KeyPair, error) {
+func CreateControlPlaneCert(ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, expirationInterval time.Duration, namespace string) (*KeyPair, error) {
 	logger := logging.FromContext(ctx)
 
 	// Then create the private key for the serving cert
@@ -159,7 +159,7 @@ func CreateControlPlaneCert(ctx context.Context, caKey *rsa.PrivateKey, caCertif
 		logger.Errorw("error generating random key", zap.Error(err))
 		return nil, err
 	}
-	clientCertTemplate, err := createClientCertTemplate(expirationInterval)
+	clientCertTemplate, err := createClientCertTemplate(expirationInterval, namespace)
 	if err != nil {
 		logger.Errorw("failed to create the server certificate template", zap.Error(err))
 		return nil, err

@@ -101,7 +101,7 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 		if secret.Labels[r.secretTypeLabelName] == dataPlaneSecretType {
 			keyPair, err = certificates.CreateDataPlaneCert(ctx, caPk, caCert, expirationInterval, secret.Namespace)
 		} else if secret.Labels[r.secretTypeLabelName] == controlPlaneSecretType {
-			keyPair, err = certificates.CreateControlPlaneCert(ctx, caPk, caCert, expirationInterval)
+			keyPair, err = certificates.CreateControlPlaneCert(ctx, caPk, caCert, expirationInterval, secret.Namespace)
 		} else {
 			return fmt.Errorf("unknown cert type: %v", r.secretTypeLabelName)
 		}

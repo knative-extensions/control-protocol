@@ -83,7 +83,9 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	controlPlaneKP := mustCreateControlPlaneCert(t, 10*time.Hour, caKey, caCertificate)
+	myNamespace := "myns"
+
+	controlPlaneKP := mustCreateControlPlaneCert(t, 10*time.Hour, caKey, caCertificate, myNamespace)
 
 	wellFormedControlPlaneSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -103,7 +105,7 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	dataPlaneKP := mustCreateDataPlaneCert(t, 10*time.Hour, caKey, caCertificate)
+	dataPlaneKP := mustCreateDataPlaneCert(t, 10*time.Hour, caKey, caCertificate, myNamespace)
 
 	wellFormedDataPlaneSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -314,14 +316,14 @@ func mustCreateCACert(t *testing.T, expirationInterval time.Duration) (*certific
 	return kp, cert, pk
 }
 
-func mustCreateDataPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate) *certificates.KeyPair {
-	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, "myns")
+func mustCreateDataPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
+	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, namespace)
 	require.NoError(t, err)
 	return kp
 }
 
-func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate) *certificates.KeyPair {
-	kp, err := certificates.CreateControlPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval)
+func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
+	kp, err := certificates.CreateControlPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, namespace)
 	require.NoError(t, err)
 	return kp
 }
