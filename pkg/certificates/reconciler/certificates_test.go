@@ -315,7 +315,7 @@ func mustCreateCACert(t *testing.T, expirationInterval time.Duration) (*certific
 }
 
 func mustCreateDataPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate) *certificates.KeyPair {
-	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval)
+	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, "myns")
 	require.NoError(t, err)
 	return kp
 }
