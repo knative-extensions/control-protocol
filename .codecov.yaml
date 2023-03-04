@@ -6,3 +6,5 @@ ignore:
   - "test"
   - "pkg/certificate/reconciler/controller_impl.go" # file copied over from pkg repo
   - "pkg/certificate/reconciler/reconciler.go" # file copied over from pkg repo
+github_checks: # skip "was not covered by tests" lines
+  annotations: false
