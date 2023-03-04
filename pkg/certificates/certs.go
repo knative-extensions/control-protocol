@@ -45,7 +45,7 @@ func createCertTemplate(expirationInterval time.Duration, namespace string) (*x5
 
 	var san string
 	if namespace != "" {
-		san = "serving-" + namespace
+		san = ControlNamePrefix + namespace
 	} else {
 		san = FakeDnsName
 	}

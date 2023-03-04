@@ -17,8 +17,9 @@ limitations under the License.
 package certificates
 
 const (
-	Organization = "knative.dev"
-	FakeDnsName  = "data-plane." + Organization
+	Organization      = "knative.dev"
+	FakeDnsName       = "data-plane." + Organization
+	ControlNamePrefix = "knative-"
 
 	//These keys are meant to line up with cert-manager, see
 	//https://cert-manager.io/docs/usage/certificate/#additional-certificate-output-formats

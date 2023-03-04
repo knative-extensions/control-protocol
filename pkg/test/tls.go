@@ -73,8 +73,6 @@ func mustGenerateTLSClientConf(t *testing.T, ctx context.Context, caKey *rsa.Pri
 	controlPlaneKeyPair, err := certificates.CreateControlPlaneCert(ctx, caKey, caCertificate, 24*time.Hour, namespace)
 	require.NoError(t, err)
 
-	san := "serving-" + namespace
-
 	controlPlaneCert, err := tls.X509KeyPair(controlPlaneKeyPair.CertBytes(), controlPlaneKeyPair.PrivateKeyBytes())
 	require.NoError(t, err)
 
@@ -83,6 +81,6 @@ func mustGenerateTLSClientConf(t *testing.T, ctx context.Context, caKey *rsa.Pri
 	return &tls.Config{
 		Certificates: []tls.Certificate{controlPlaneCert},
 		RootCAs:      certPool,
-		ServerName:   san,
+		ServerName:   certificates.ControlNamePrefix + namespace,
 	}
 }
