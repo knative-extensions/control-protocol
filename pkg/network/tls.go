@@ -29,7 +29,6 @@ func LoadServerTLSConfigFromFile() (*tls.Config, error) {
 
 	certPool := x509.NewCertPool()
 	certPool.AppendCertsFromPEM(caCert)
-
 	conf := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		ClientCAs:    certPool,
@@ -53,7 +52,6 @@ func LoadClientTLSConfigFromFile() (*tls.Config, error) {
 
 	certPool := x509.NewCertPool()
 	certPool.AppendCertsFromPEM(caCert)
-
 	conf := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      certPool,
