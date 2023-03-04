@@ -37,13 +37,13 @@ var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
 
 // Copy-pasted from https://github.com/knative/pkg/blob/975a1cf9e4470b26ce54d9cc628dbd50716b6b95/webhook/certificates/resources/certs.go
 func createCertTemplate(expirationInterval time.Duration, namespace string) (*x509.Certificate, error) {
-	var san string
 
 	serialNumber, err := rand.Int(randReader, serialNumberLimit)
 	if err != nil {
 		return nil, errors.New("failed to generate serial number: " + err.Error())
 	}
 
+	var san string
 	if namespace != "" {
 		san = "serving-" + namespace
 	} else {
