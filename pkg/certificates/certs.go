@@ -71,7 +71,7 @@ func createCACertTemplate(expirationInterval time.Duration) (*x509.Certificate, 
 	return rootCert, nil
 }
 
-// Create cert template that we can use on the server for TLS
+// Create cert template that we can use on the client/server for TLS
 func createAnyCertTemplate(expirationInterval time.Duration, san string) (*x509.Certificate, error) {
 	cert, err := createCertTemplate(expirationInterval, san)
 	if err != nil {
