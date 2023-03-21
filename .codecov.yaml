@@ -1,3 +1,4 @@
+---
 coverage:
   # Commit status https://docs.codecov.io/docs/commit-status are used
   # to block PR based on coverage threshold.
@@ -15,10 +16,11 @@ comment:
   # Update existing comment or create new if deleted.
   behavior: default
 ignore:
-  - "**/zz_generated*.go" # Ignore generated files.
+  - "**/zz_generated*.go"  # Ignore generated files.
   - "third_party"
   - "vendor"
   - "hack"
   - "test"
-  - "pkg/certificate/reconciler/controller_impl.go" # file copied over from pkg repo
-  - "pkg/certificate/reconciler/reconciler.go" # file copied over from pkg repo
+  # yamllint disable-line rule:line-length
+  - "pkg/certificate/reconciler/controller_impl.go"  # file copied over from pkg repo
+  - "pkg/certificate/reconciler/reconciler.go"  # file copied over from pkg repo
