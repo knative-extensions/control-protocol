@@ -85,26 +85,27 @@ func TestReconcile(t *testing.T) {
 
 	myNamespace := "myns"
 
-	controlPlaneKP := mustCreateControlPlaneCert(t, 10*time.Hour, caKey, caCertificate, myNamespace)
+	/*
+		controlPlaneKP := mustCreateControlPlaneCert(t, 10*time.Hour, caKey, caCertificate, myNamespace)
 
-	wellFormedControlPlaneSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "control-plane-ctrl",
-			Namespace: namespace,
-			Labels: map[string]string{
-				labelName: controlPlaneSecretType,
+		wellFormedControlPlaneSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "control-plane-ctrl",
+				Namespace: namespace,
+				Labels: map[string]string{
+					labelName: controlPlaneSecretType,
+				},
 			},
-		},
-		Data: map[string][]byte{
-			certificates.SecretCaCertKey: caKP.CertBytes(),
-			certificates.SecretCertKey:   controlPlaneKP.CertBytes(),
-			certificates.SecretPKKey:     controlPlaneKP.PrivateKeyBytes(),
-			certificates.CaCertName:      caKP.CertBytes(),
-			certificates.CertName:        controlPlaneKP.CertBytes(),
-			certificates.PrivateKeyName:  controlPlaneKP.PrivateKeyBytes(),
-		},
-	}
-
+			Data: map[string][]byte{
+				certificates.SecretCaCertKey: caKP.CertBytes(),
+				certificates.SecretCertKey:   controlPlaneKP.CertBytes(),
+				certificates.SecretPKKey:     controlPlaneKP.PrivateKeyBytes(),
+				certificates.CaCertName:      caKP.CertBytes(),
+				certificates.CertName:        controlPlaneKP.CertBytes(),
+				certificates.PrivateKeyName:  controlPlaneKP.PrivateKeyBytes(),
+			},
+		}
+	*/
 	dataPlaneKP := mustCreateDataPlaneCert(t, 10*time.Hour, caKey, caCertificate, myNamespace)
 
 	wellFormedDataPlaneSecret := &corev1.Secret{
@@ -120,8 +121,8 @@ func TestReconcile(t *testing.T) {
 			certificates.SecretCertKey:   dataPlaneKP.CertBytes(),
 			certificates.SecretPKKey:     dataPlaneKP.PrivateKeyBytes(),
 			certificates.CaCertName:      caKP.CertBytes(),
-			certificates.CertName:        controlPlaneKP.CertBytes(),
-			certificates.PrivateKeyName:  controlPlaneKP.PrivateKeyBytes(),
+			certificates.CertName:        dataPlaneKP.CertBytes(),
+			certificates.PrivateKeyName:  dataPlaneKP.PrivateKeyBytes(),
 		},
 	}
 
@@ -132,18 +133,20 @@ func TestReconcile(t *testing.T) {
 		objects                []*corev1.Secret
 		asserts                map[string]func(*testing.T, *corev1.Secret)
 	}{{
-		name:    "well formed secret CA and control plane secret exists",
-		key:     namespace + "/control-plane-ctrl",
-		objects: []*corev1.Secret{wellFormedCaSecret, wellFormedControlPlaneSecret},
-		asserts: map[string]func(*testing.T, *corev1.Secret){
-			wellFormedCaSecret.Name: func(t *testing.T, secret *corev1.Secret) {
-				require.Equal(t, wellFormedCaSecret, secret)
-			},
-			wellFormedControlPlaneSecret.Name: func(t *testing.T, secret *corev1.Secret) {
-				require.Equal(t, wellFormedControlPlaneSecret, secret)
-			},
-		},
-	}, {
+		/*
+			name:    "well formed secret CA and control plane secret exists",
+					key:     namespace + "/control-plane-ctrl",
+					objects: []*corev1.Secret{wellFormedCaSecret, wellFormedControlPlaneSecret},
+					asserts: map[string]func(*testing.T, *corev1.Secret){
+						wellFormedCaSecret.Name: func(t *testing.T, secret *corev1.Secret) {
+							require.Equal(t, wellFormedCaSecret, secret)
+						},
+						wellFormedControlPlaneSecret.Name: func(t *testing.T, secret *corev1.Secret) {
+							require.Equal(t, wellFormedControlPlaneSecret, secret)
+						},
+					},
+				}, {
+		*/
 		name:    "well formed secret CA and data plane secret exists",
 		key:     namespace + "/data-plane-ctrl",
 		objects: []*corev1.Secret{wellFormedCaSecret, wellFormedDataPlaneSecret},
@@ -317,16 +320,19 @@ func mustCreateCACert(t *testing.T, expirationInterval time.Duration) (*certific
 }
 
 func mustCreateDataPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
-	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, namespace)
+	san := certificates.DataPlaneNamePrefix + namespace
+	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, san)
 	require.NoError(t, err)
 	return kp
 }
 
-func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
-	kp, err := certificates.CreateControlPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, namespace)
-	require.NoError(t, err)
-	return kp
-}
+/*
+	func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
+		kp, err := certificates.CreateControlPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, namespace)
+		require.NoError(t, err)
+		return kp
+	}
+*/
 
 func validCACert(t *testing.T, secret *corev1.Secret) {
 	require.Contains(t, secret.Data, certificates.PrivateKeyName)

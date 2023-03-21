@@ -42,7 +42,8 @@ func TestListerCertificateGetter_GenerateTLSDialer(t *testing.T) {
 	caCert, caPrivate, err := caKP.Parse()
 	require.NoError(t, err)
 
-	kp, err := certificates.CreateControlPlaneCert(context.TODO(), caPrivate, caCert, 24*time.Hour, namespace)
+	san := certificates.DataPlaneNamePrefix + namespace
+	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caPrivate, caCert, 24*time.Hour, san)
 	require.NoError(t, err)
 
 	secretData := make(map[string][]byte)
