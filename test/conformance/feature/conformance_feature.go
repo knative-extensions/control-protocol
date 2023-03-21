@@ -56,18 +56,16 @@ func conformanceFeature(featureName string, tls bool) *feature.Feature {
 		// one for the server and one for the client
 		// This is the job the certificates controller usually does for us
 		f.Setup("Generate client and server certs", func(ctx context.Context, t feature.T) {
-			san := certificates.DataPlaneNamePrefix + "myns"
-
 			// Generate the keys
 			caKP, err := certificates.CreateCACerts(ctx, 24*time.Hour)
 			require.NoError(t, err)
 			caCert, caPrivateKey, err := caKP.Parse()
 			require.NoError(t, err)
 
-			controlPlaneKeyPair, err := certificates.CreateControlPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour, san)
+			controlPlaneKeyPair, err := certificates.CreateControlPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneNamePrefix+"myns")
 			require.NoError(t, err)
 
-			dataPlaneKeyPair, err := certificates.CreateDataPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour, san)
+			dataPlaneKeyPair, err := certificates.CreateDataPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneNamePrefix+"myns")
 			require.NoError(t, err)
 
 			// Create the secrets

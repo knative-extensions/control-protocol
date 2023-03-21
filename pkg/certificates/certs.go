@@ -71,20 +71,20 @@ func createCACertTemplate(expirationInterval time.Duration) (*x509.Certificate, 
 	return rootCert, nil
 }
 
-// Create cert template that we can use on Data Plane clients/servers for TLS
-func createServerCertTemplate(expirationInterval time.Duration, san string) (*x509.Certificate, error) {
-	serverCert, err := createCertTemplate(expirationInterval, san)
+// Create cert template that we can use on the server for TLS
+func createAnyCertTemplate(expirationInterval time.Duration, san string) (*x509.Certificate, error) {
+	cert, err := createCertTemplate(expirationInterval, san)
 	if err != nil {
 		return nil, err
 	}
-	serverCert.KeyUsage = x509.KeyUsageDigitalSignature
-	serverCert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
-	serverCert.Subject = pkix.Name{
+	cert.KeyUsage = x509.KeyUsageDigitalSignature
+	cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageAny}
+	cert.Subject = pkix.Name{
 		Organization: []string{Organization},
 		// Do not use the same value with CA.
 		CommonName: "control-plane-server",
 	}
-	return serverCert, err
+	return cert, err
 }
 
 // Create cert template that we can use on the client for TLS
@@ -175,27 +175,27 @@ func CreateDataPlaneCert(ctx context.Context, caKey *rsa.PrivateKey, caCertifica
 	logger := logging.FromContext(ctx)
 
 	// Then create the private key for the serving cert
-	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	keyPair, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		logger.Errorw("error generating random key", zap.Error(err))
 		return nil, err
 	}
-	serverCertTemplate, err := createServerCertTemplate(expirationInterval, san)
+	certTemplate, err := createAnyCertTemplate(expirationInterval, san)
 	if err != nil {
 		logger.Errorw("failed to create the server certificate template", zap.Error(err))
 		return nil, err
 	}
 
 	// create a certificate which wraps the server's public key, sign it with the CA private key
-	_, serverCertPEM, err := createCert(serverCertTemplate, caCertificate, &serverKey.PublicKey, caKey)
+	_, certPEM, err := createCert(certTemplate, caCertificate, &keyPair.PublicKey, caKey)
 	if err != nil {
 		logger.Errorw("error signing server certificate template", zap.Error(err))
 		return nil, err
 	}
-	privateServerKeyPEM := &pem.Block{
-		Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverKey),
+	privateKeyPEM := &pem.Block{
+		Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(keyPair),
 	}
-	return NewKeyPair(privateServerKeyPEM, serverCertPEM), nil
+	return NewKeyPair(privateKeyPEM, certPEM), nil
 }
 
 // ParseCert parses a certificate/private key pair from serialized pem blocks
