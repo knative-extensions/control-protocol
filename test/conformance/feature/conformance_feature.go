@@ -64,10 +64,10 @@ func conformanceFeature(featureName string, tls bool) *feature.Feature {
 			caCert, caPrivateKey, err := caKP.Parse()
 			require.NoError(t, err)
 
-			clientKeyPair, err := certificates.CreateDataPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour, san)
+			controlPlaneKeyPair, err := certificates.CreateControlPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour, san)
 			require.NoError(t, err)
 
-			serverKeyPair, err := certificates.CreateDataPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour, san)
+			dataPlaneKeyPair, err := certificates.CreateDataPlaneCert(ctx, caPrivateKey, caCert, 24*time.Hour, san)
 			require.NoError(t, err)
 
 			// Create the secrets
@@ -77,8 +77,8 @@ func conformanceFeature(featureName string, tls bool) *feature.Feature {
 					Namespace: environment.FromContext(ctx).Namespace(),
 				},
 				Data: map[string][]byte{
-					certificates.SecretCertKey:   clientKeyPair.CertBytes(),
-					certificates.SecretPKKey:     clientKeyPair.PrivateKeyBytes(),
+					certificates.SecretCertKey:   controlPlaneKeyPair.CertBytes(),
+					certificates.SecretPKKey:     controlPlaneKeyPair.PrivateKeyBytes(),
 					certificates.SecretCaCertKey: caKP.CertBytes(),
 				},
 			}
@@ -88,8 +88,8 @@ func conformanceFeature(featureName string, tls bool) *feature.Feature {
 					Namespace: environment.FromContext(ctx).Namespace(),
 				},
 				Data: map[string][]byte{
-					certificates.SecretCertKey:   serverKeyPair.CertBytes(),
-					certificates.SecretPKKey:     serverKeyPair.PrivateKeyBytes(),
+					certificates.SecretCertKey:   dataPlaneKeyPair.CertBytes(),
+					certificates.SecretPKKey:     dataPlaneKeyPair.PrivateKeyBytes(),
 					certificates.SecretCaCertKey: caKP.CertBytes(),
 				},
 			}

@@ -43,7 +43,7 @@ func TestListerCertificateGetter_GenerateTLSDialer(t *testing.T) {
 	require.NoError(t, err)
 
 	san := certificates.DataPlaneNamePrefix + namespace
-	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caPrivate, caCert, 24*time.Hour, san)
+	kp, err := certificates.CreateControlPlaneCert(context.TODO(), caPrivate, caCert, 24*time.Hour, san)
 	require.NoError(t, err)
 
 	secretData := make(map[string][]byte)
