@@ -315,13 +315,13 @@ func mustCreateCACert(t *testing.T, expirationInterval time.Duration) (*certific
 }
 
 func mustCreateDataPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
-	kp, err := certificates.CreateDataPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneNamePrefix+namespace)
+	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneNamePrefix+namespace, certificates.LegacyFakeDnsName)
 	require.NoError(t, err)
 	return kp
 }
 
 func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
-	kp, err := certificates.CreateControlPlaneCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneNamePrefix+namespace)
+	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneNamePrefix+namespace, certificates.LegacyFakeDnsName)
 	require.NoError(t, err)
 	return kp
 }
