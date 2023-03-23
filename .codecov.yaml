@@ -1,8 +1,26 @@
+---
+coverage:
+  # Commit status https://docs.codecov.io/docs/commit-status are used
+  # to block PR based on coverage threshold.
+  status:
+    project:
+      default:
+        target: 70
+        threshold: 1%
+    patch:
+      # Disable the coverage threshold of the patch, so that PRs are
+      # only failing because of overall project coverage threshold.
+      # See https://docs.codecov.io/docs/commit-status#disabling-a-status.
+      default: false
+comment:
+  # Update existing comment or create new if deleted.
+  behavior: default
 ignore:
-  - "**/zz_generated*.go" # Ignore generated files.
+  - "**/zz_generated*.go"  # Ignore generated files.
   - "third_party"
   - "vendor"
   - "hack"
   - "test"
-  - "pkg/certificate/reconciler/controller_impl.go" # file copied over from pkg repo
-  - "pkg/certificate/reconciler/reconciler.go" # file copied over from pkg repo
+  # yamllint disable-line rule:line-length
+  - "pkg/certificate/reconciler/controller_impl.go"  # file copied over from pkg repo
+  - "pkg/certificate/reconciler/reconciler.go"  # file copied over from pkg repo

@@ -37,8 +37,8 @@ func MustGenerateTestTLSConf(t *testing.T, ctx context.Context) (func() (*tls.Co
 	caCert, caPrivateKey, err := caKP.Parse()
 	require.NoError(t, err)
 
-	serverTLSConf := mustGenerateTLSServerConf(t, ctx, caPrivateKey, caCert)
-	clientTLSConf := mustGenerateTLSClientConf(t, ctx, caPrivateKey, caCert)
+	serverTLSConf := mustGenerateTLSServerConf(t, ctx, caPrivateKey, caCert, "myns")
+	clientTLSConf := mustGenerateTLSClientConf(t, ctx, caPrivateKey, caCert, "myns")
 
 	tlsDialer := &tls.Dialer{
 		NetDialer: &net.Dialer{
@@ -50,9 +50,9 @@ func MustGenerateTestTLSConf(t *testing.T, ctx context.Context) (func() (*tls.Co
 	return serverTLSConf, tlsDialer
 }
 
-func mustGenerateTLSServerConf(t *testing.T, ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate) func() (*tls.Config, error) {
+func mustGenerateTLSServerConf(t *testing.T, ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) func() (*tls.Config, error) {
 	return func() (*tls.Config, error) {
-		dataPlaneKeyPair, err := certificates.CreateDataPlaneCert(ctx, caKey, caCertificate, 24*time.Hour)
+		dataPlaneKeyPair, err := certificates.CreateCert(ctx, caKey, caCertificate, 24*time.Hour, certificates.DataPlaneNamePrefix+namespace, certificates.LegacyFakeDnsName)
 		require.NoError(t, err)
 
 		dataPlaneCert, err := tls.X509KeyPair(dataPlaneKeyPair.CertBytes(), dataPlaneKeyPair.PrivateKeyBytes())
@@ -64,13 +64,12 @@ func mustGenerateTLSServerConf(t *testing.T, ctx context.Context, caKey *rsa.Pri
 			Certificates: []tls.Certificate{dataPlaneCert},
 			ClientCAs:    certPool,
 			ClientAuth:   tls.RequireAndVerifyClientCert,
-			ServerName:   caCertificate.DNSNames[0],
 		}, nil
 	}
 }
 
-func mustGenerateTLSClientConf(t *testing.T, ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate) *tls.Config {
-	controlPlaneKeyPair, err := certificates.CreateControlPlaneCert(ctx, caKey, caCertificate, 24*time.Hour)
+func mustGenerateTLSClientConf(t *testing.T, ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *tls.Config {
+	controlPlaneKeyPair, err := certificates.CreateCert(ctx, caKey, caCertificate, 24*time.Hour, certificates.DataPlaneNamePrefix+namespace, certificates.LegacyFakeDnsName)
 	require.NoError(t, err)
 
 	controlPlaneCert, err := tls.X509KeyPair(controlPlaneKeyPair.CertBytes(), controlPlaneKeyPair.PrivateKeyBytes())
@@ -81,6 +80,6 @@ func mustGenerateTLSClientConf(t *testing.T, ctx context.Context, caKey *rsa.Pri
 	return &tls.Config{
 		Certificates: []tls.Certificate{controlPlaneCert},
 		RootCAs:      certPool,
-		ServerName:   certificates.FakeDnsName,
+		ServerName:   certificates.DataPlaneNamePrefix + namespace,
 	}
 }
