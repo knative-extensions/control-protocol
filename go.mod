@@ -1,4 +1,4 @@
-module knative.dev/control-protocol
+module knative.dev/control-protocols
 
 go 1.18
 
