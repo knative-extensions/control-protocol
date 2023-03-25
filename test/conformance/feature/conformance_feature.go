@@ -62,10 +62,10 @@ func conformanceFeature(featureName string, tls bool) *feature.Feature {
 			caCert, caPrivateKey, err := caKP.Parse()
 			require.NoError(t, err)
 
-			controlPlaneKeyPair, err := certificates.CreateCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneNamePrefix+"myns", certificates.FakeDnsName)
+			controlPlaneKeyPair, err := certificates.CreateCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneNamePrefix+"myns", certificates.LegcayFakeDnsName)
 			require.NoError(t, err)
 
-			dataPlaneKeyPair, err := certificates.CreateCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneNamePrefix+"myns", certificates.FakeDnsName)
+			dataPlaneKeyPair, err := certificates.CreateCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneNamePrefix+"myns", certificates.LegcayFakeDnsName)
 			require.NoError(t, err)
 
 			// Create the secrets

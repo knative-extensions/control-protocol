@@ -95,7 +95,7 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 	cert, _, err := parseAndValidateSecret(secret, true)
 	if err != nil {
 		r.logger.Infof("Secret invalid: %v", err)
-		sans := []string{certificates.DataPlaneNamePrefix + secret.Namespace, certificates.FakeDnsName}
+		sans := []string{certificates.DataPlaneNamePrefix + secret.Namespace, certificates.LegcayFakeDnsName}
 		// Check the secret to reconcile type
 		var keyPair *certificates.KeyPair
 		if secret.Labels[r.secretTypeLabelName] == dataPlaneSecretType {
