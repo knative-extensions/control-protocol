@@ -41,8 +41,11 @@ const (
 	expirationInterval   = time.Hour * 24 * 30       // 30 days
 	rotationThreshold    = 10 * time.Minute
 
+	// certificates used by control elements such as autoscaler, ingress controller
 	controlPlaneSecretType = "control-plane"
-	dataPlaneSecretType    = "data-plane"
+
+	// certificates used by data elements such as activator, ingress gw, queue
+	dataPlaneSecretType = "data-plane"
 )
 
 // Reconciler reconciles a SampleSource object
@@ -95,13 +98,13 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 	cert, _, err := parseAndValidateSecret(secret, true)
 	if err != nil {
 		r.logger.Infof("Secret invalid: %v", err)
-		sans := []string{certificates.DataPlaneNamePrefix + secret.Namespace, certificates.LegacyFakeDnsName}
 		// Check the secret to reconcile type
 		var keyPair *certificates.KeyPair
 		if secret.Labels[r.secretTypeLabelName] == dataPlaneSecretType {
+			sans := []string{certificates.DataPlaneNamePrefix + secret.Namespace, certificates.LegacyFakeDnsName}
 			keyPair, err = certificates.CreateCert(ctx, caPk, caCert, expirationInterval, sans...)
 		} else if secret.Labels[r.secretTypeLabelName] == controlPlaneSecretType {
-			keyPair, err = certificates.CreateCert(ctx, caPk, caCert, expirationInterval, sans...)
+			keyPair, err = certificates.CreateCert(ctx, caPk, caCert, expirationInterval, certificates.ControlPlaneName)
 		} else {
 			return fmt.Errorf("unknown cert type: %v", r.secretTypeLabelName)
 		}
@@ -153,7 +156,7 @@ func (r *reconciler) enqueueBeforeExpiration(secret *corev1.Secret, cert *x509.C
 	r.enqueueAfter(types.NamespacedName{
 		Namespace: secret.Namespace,
 		Name:      secret.Name,
-	}, when.Sub(time.Now()))
+	}, time.Until(when))
 }
 
 func (r *reconciler) commitUpdatedSecret(ctx context.Context, secret *corev1.Secret, keyPair *certificates.KeyPair, caCert []byte) error {

@@ -64,6 +64,10 @@ func mustGenerateTLSServerConf(t *testing.T, ctx context.Context, caKey *rsa.Pri
 			Certificates: []tls.Certificate{dataPlaneCert},
 			ClientCAs:    certPool,
 			ClientAuth:   tls.RequireAndVerifyClientCert,
+			VerifyConnection: func(cs tls.ConnectionState) error {
+				err := cs.PeerCertificates[0].VerifyHostname(certificates.ControlPlaneName)
+				return err
+			},
 		}, nil
 	}
 }

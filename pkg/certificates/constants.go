@@ -21,6 +21,7 @@ const (
 	LegacyFakeDnsName   = "data-plane." + Organization
 	FakeDnsName         = LegacyFakeDnsName
 	DataPlaneNamePrefix = "knative-"
+	ControlPlaneName    = "kcontrol"
 
 	//These keys are meant to line up with cert-manager, see
 	//https://cert-manager.io/docs/usage/certificate/#additional-certificate-output-formats
