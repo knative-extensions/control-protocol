@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	controlPlaneKP := mustCreateControlPlaneCert(t, 10*time.Hour, caKey, caCertificate, "myns")
+	controlPlaneKP := mustCreateControlPlaneCert(t, 10*time.Hour, caKey, caCertificate)
 
 	wellFormedControlPlaneSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -123,7 +123,7 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	dataPlanePipelineKP := mustCreateDataPlanePipelineCert(t, 10*time.Hour, caKey, caCertificate, "myns")
+	dataPlanePipelineKP := mustCreateDataPlanePipelineCert(t, 10*time.Hour, caKey, caCertificate, "0")
 
 	wellFormedDataPlanePipelineSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -374,14 +374,14 @@ func mustCreateDataPlaneEdgeCert(t *testing.T, expirationInterval time.Duration,
 	return kp
 }
 
-func mustCreateDataPlanePipelineCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
-	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneEdgePrefix+namespace, certificates.LegacyFakeDnsName)
+func mustCreateDataPlanePipelineCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, pipelineId string) *certificates.KeyPair {
+	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlanePipelinePrefix+pipelineId, certificates.LegacyFakeDnsName)
 	require.NoError(t, err)
 	return kp
 }
 
-func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
-	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneEdgePrefix+namespace, certificates.LegacyFakeDnsName)
+func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate) *certificates.KeyPair {
+	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.ControlPlaneName)
 	require.NoError(t, err)
 	return kp
 }

@@ -111,6 +111,7 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 		if !ok {
 			pipelineId = "0"
 		}
+
 		var sans []string
 		switch secret.Labels[r.secretTypeLabelName] {
 		case controlPlaneSecretType:
@@ -124,6 +125,7 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 		default:
 			return fmt.Errorf("unknown cert type: %v", r.secretTypeLabelName)
 		}
+
 		var keyPair *certificates.KeyPair
 		keyPair, err = certificates.CreateCert(ctx, caPk, caCert, expirationInterval, sans...)
 		if err != nil {
