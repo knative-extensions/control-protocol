@@ -70,7 +70,7 @@ func (ch *ListerCertificateGetter) GenerateTLSDialer(baseDialOptions *net.Dialer
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{controlPlaneCert},
 		RootCAs:      certPool,
-		ServerName:   certificates.DataPlaneEdgePrefix + ch.namespace,
+		ServerName:   certificates.DataPlaneEdgeName(ch.namespace),
 	}
 
 	// Copy from base dial options

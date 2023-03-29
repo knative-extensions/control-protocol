@@ -32,8 +32,6 @@ import (
 	"knative.dev/pkg/logging"
 )
 
-var TID uint32 = 0
-
 var randReader = rand.Reader
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
 

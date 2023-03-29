@@ -44,8 +44,8 @@ const (
 	// certificates used by control elements such as autoscaler, ingress controller
 	controlPlaneSecretType = "control-plane"
 
-	// certificates used by trusted data pipeline elements such as activator, ingress gw
-	dataPlanePipelineSecretType = "data-plane-pipeline"
+	// certificates used by trusted data routing elements such as activator, ingress gw
+	dataPlaneRoutingSecretType = "data-plane-routing"
 
 	// certificates used by edges acting as senders and receivers in the data-plane such as queue
 	dataPlaneEdgeSecretType = "data-plane-edge"
@@ -60,7 +60,7 @@ type reconciler struct {
 	secretLister        listerv1.SecretLister
 	caSecretName        string
 	secretTypeLabelName string
-	secretPipelineId    string
+	secretRoutingId     string
 	enqueueAfter        func(key types.NamespacedName, delay time.Duration)
 
 	logger *zap.SugaredLogger
@@ -107,19 +107,19 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 		r.logger.Infof("Secret invalid: %v", err)
 		// Check the secret to reconcile type
 
-		pipelineId, ok := secret.Labels[r.secretPipelineId]
-		if !ok {
-			pipelineId = "0"
+		routingId := secret.Labels[r.secretRoutingId]
+		if routingId == "" {
+			routingId = "0"
 		}
 
 		var sans []string
 		switch secret.Labels[r.secretTypeLabelName] {
 		case controlPlaneSecretType:
 			sans = []string{certificates.ControlPlaneName}
-		case dataPlanePipelineSecretType:
-			sans = []string{certificates.DataPlanePipelinePrefix + pipelineId, certificates.LegacyFakeDnsName}
+		case dataPlaneRoutingSecretType:
+			sans = []string{certificates.DataPlaneRoutingName(routingId), certificates.LegacyFakeDnsName}
 		case dataPlaneEdgeSecretType:
-			sans = []string{certificates.DataPlaneEdgePrefix + secret.Namespace, certificates.LegacyFakeDnsName}
+			sans = []string{certificates.DataPlaneEdgeName(secret.Namespace), certificates.LegacyFakeDnsName}
 		case dataPlaneDeprecatedSecretType:
 			sans = []string{certificates.LegacyFakeDnsName}
 		default:

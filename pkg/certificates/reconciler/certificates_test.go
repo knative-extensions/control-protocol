@@ -123,20 +123,20 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	dataPlanePipelineKP := mustCreateDataPlanePipelineCert(t, 10*time.Hour, caKey, caCertificate, "0")
+	dataPlaneRoutingKP := mustCreateDataPlaneRoutingCert(t, 10*time.Hour, caKey, caCertificate, "0")
 
-	wellFormedDataPlanePipelineSecret := &corev1.Secret{
+	wellFormedDataPlaneRoutingSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "data-plane-pipeline-ctrl",
+			Name:      "data-plane-routing-ctrl",
 			Namespace: namespace,
 			Labels: map[string]string{
-				labelName: dataPlanePipelineSecretType,
+				labelName: dataPlaneRoutingSecretType,
 			},
 		},
 		Data: map[string][]byte{
 			certificates.SecretCaCertKey: caKP.CertBytes(),
-			certificates.SecretCertKey:   dataPlanePipelineKP.CertBytes(),
-			certificates.SecretPKKey:     dataPlanePipelineKP.PrivateKeyBytes(),
+			certificates.SecretCertKey:   dataPlaneRoutingKP.CertBytes(),
+			certificates.SecretPKKey:     dataPlaneRoutingKP.PrivateKeyBytes(),
 			certificates.CaCertName:      caKP.CertBytes(),
 			certificates.CertName:        controlPlaneKP.CertBytes(),
 			certificates.PrivateKeyName:  controlPlaneKP.PrivateKeyBytes(),
@@ -174,15 +174,15 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 	}, {
-		name:    "well formed secret CA and data plane pipeline secret exists",
+		name:    "well formed secret CA and data plane routing secret exists",
 		key:     namespace + "/data-plane-ctrl",
-		objects: []*corev1.Secret{wellFormedCaSecret, wellFormedDataPlanePipelineSecret},
+		objects: []*corev1.Secret{wellFormedCaSecret, wellFormedDataPlaneRoutingSecret},
 		asserts: map[string]func(*testing.T, *corev1.Secret){
 			wellFormedCaSecret.Name: func(t *testing.T, secret *corev1.Secret) {
 				require.Equal(t, wellFormedCaSecret, secret)
 			},
-			wellFormedDataPlanePipelineSecret.Name: func(t *testing.T, secret *corev1.Secret) {
-				require.Equal(t, wellFormedDataPlanePipelineSecret, secret)
+			wellFormedDataPlaneRoutingSecret.Name: func(t *testing.T, secret *corev1.Secret) {
+				require.Equal(t, wellFormedDataPlaneRoutingSecret, secret)
 			},
 		},
 	}, {
@@ -230,7 +230,7 @@ func TestReconcile(t *testing.T) {
 			"data-plane-ctrl": validControlPlaneCert,
 		},
 	}, {
-		name:                   "empty CA secret and empty data plane pipeline secret",
+		name:                   "empty CA secret and empty data plane routing secret",
 		key:                    namespace + "/data-plane-ctrl",
 		executeReconcilerTwice: true,
 		objects: []*corev1.Secret{{
@@ -243,7 +243,7 @@ func TestReconcile(t *testing.T) {
 				Name:      "data-plane-ctrl",
 				Namespace: namespace,
 				Labels: map[string]string{
-					labelName: dataPlanePipelineSecretType,
+					labelName: dataPlaneRoutingSecretType,
 				},
 			},
 		}},
@@ -369,13 +369,13 @@ func mustCreateCACert(t *testing.T, expirationInterval time.Duration) (*certific
 }
 
 func mustCreateDataPlaneEdgeCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
-	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneEdgePrefix+namespace, certificates.LegacyFakeDnsName)
+	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneEdgeName(namespace), certificates.LegacyFakeDnsName)
 	require.NoError(t, err)
 	return kp
 }
 
-func mustCreateDataPlanePipelineCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, pipelineId string) *certificates.KeyPair {
-	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlanePipelinePrefix+pipelineId, certificates.LegacyFakeDnsName)
+func mustCreateDataPlaneRoutingCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, routingId string) *certificates.KeyPair {
+	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneRoutingName(routingId), certificates.LegacyFakeDnsName)
 	require.NoError(t, err)
 	return kp
 }

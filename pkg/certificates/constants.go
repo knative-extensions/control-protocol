@@ -17,12 +17,12 @@ limitations under the License.
 package certificates
 
 const (
-	Organization            = "knative.dev"
-	LegacyFakeDnsName       = "data-plane." + Organization
-	FakeDnsName             = LegacyFakeDnsName // Deprecated
-	DataPlaneEdgePrefix     = "k-"
-	DataPlanePipelinePrefix = "kpipeline-"
-	ControlPlaneName        = "kcontrol"
+	Organization           = "knative.dev"
+	LegacyFakeDnsName      = "data-plane." + Organization
+	FakeDnsName            = LegacyFakeDnsName // Deprecated
+	dataPlaneEdgePrefix    = "k-"
+	dataPlaneRoutingPrefix = "krouting-"
+	ControlPlaneName       = "kcontrol"
 
 	//These keys are meant to line up with cert-manager, see
 	//https://cert-manager.io/docs/usage/certificate/#additional-certificate-output-formats
@@ -35,3 +35,14 @@ const (
 	SecretCertKey   = "public-cert.pem"
 	SecretPKKey     = "private-key.pem"
 )
+
+func DataPlaneRoutingName(rountingId string) string {
+	if rountingId == "" {
+		rountingId = "0"
+	}
+	return dataPlaneRoutingPrefix + rountingId
+}
+
+func DataPlaneEdgeName(namespace string) string {
+	return dataPlaneEdgePrefix + namespace
+}
