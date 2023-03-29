@@ -17,11 +17,12 @@ limitations under the License.
 package certificates
 
 const (
-	Organization        = "knative.dev"
-	LegacyFakeDnsName   = "data-plane." + Organization
-	FakeDnsName         = LegacyFakeDnsName
-	DataPlaneNamePrefix = "knative-"
-	ControlPlaneName    = "kcontrol"
+	Organization            = "knative.dev"
+	LegacyFakeDnsName       = "data-plane." + Organization
+	FakeDnsName             = LegacyFakeDnsName // Deprecated
+	DataPlaneEdgePrefix     = "k-"
+	DataPlanePipelinePrefix = "kpipeline-"
+	ControlPlaneName        = "kcontrol"
 
 	//These keys are meant to line up with cert-manager, see
 	//https://cert-manager.io/docs/usage/certificate/#additional-certificate-output-formats

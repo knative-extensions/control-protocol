@@ -44,8 +44,14 @@ const (
 	// certificates used by control elements such as autoscaler, ingress controller
 	controlPlaneSecretType = "control-plane"
 
-	// certificates used by data elements such as activator, ingress gw, queue
-	dataPlaneSecretType = "data-plane"
+	// certificates used by trusted data pipeline elements such as activator, ingress gw
+	dataPlanePipelineSecretType = "data-plane-pipeline"
+
+	// certificates used by edges acting as senders and receivers in the data-plane such as queue
+	dataPlaneEdgeSecretType = "data-plane-edge"
+
+	// Deprecated used by any data plane element
+	dataPlaneDeprecatedSecretType = "data-plane"
 )
 
 // Reconciler reconciles a SampleSource object
@@ -54,6 +60,7 @@ type reconciler struct {
 	secretLister        listerv1.SecretLister
 	caSecretName        string
 	secretTypeLabelName string
+	secretPipelineId    string
 	enqueueAfter        func(key types.NamespacedName, delay time.Duration)
 
 	logger *zap.SugaredLogger
@@ -99,15 +106,26 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 	if err != nil {
 		r.logger.Infof("Secret invalid: %v", err)
 		// Check the secret to reconcile type
-		var keyPair *certificates.KeyPair
-		if secret.Labels[r.secretTypeLabelName] == dataPlaneSecretType {
-			sans := []string{certificates.DataPlaneNamePrefix + secret.Namespace, certificates.LegacyFakeDnsName}
-			keyPair, err = certificates.CreateCert(ctx, caPk, caCert, expirationInterval, sans...)
-		} else if secret.Labels[r.secretTypeLabelName] == controlPlaneSecretType {
-			keyPair, err = certificates.CreateCert(ctx, caPk, caCert, expirationInterval, certificates.ControlPlaneName)
-		} else {
+
+		pipelineId, ok := secret.Labels[r.secretPipelineId]
+		if !ok {
+			pipelineId = "0"
+		}
+		var sans []string
+		switch secret.Labels[r.secretTypeLabelName] {
+		case controlPlaneSecretType:
+			sans = []string{certificates.ControlPlaneName}
+		case dataPlanePipelineSecretType:
+			sans = []string{certificates.DataPlanePipelinePrefix + pipelineId, certificates.LegacyFakeDnsName}
+		case dataPlaneEdgeSecretType:
+			sans = []string{certificates.DataPlaneEdgePrefix + secret.Namespace, certificates.LegacyFakeDnsName}
+		case dataPlaneDeprecatedSecretType:
+			sans = []string{certificates.LegacyFakeDnsName}
+		default:
 			return fmt.Errorf("unknown cert type: %v", r.secretTypeLabelName)
 		}
+		var keyPair *certificates.KeyPair
+		keyPair, err = certificates.CreateCert(ctx, caPk, caCert, expirationInterval, sans...)
 		if err != nil {
 			return fmt.Errorf("cannot generate the cert: %v", err)
 		}

@@ -52,20 +52,20 @@ func MustGenerateTestTLSConf(t *testing.T, ctx context.Context) (func() (*tls.Co
 
 func mustGenerateTLSServerConf(t *testing.T, ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) func() (*tls.Config, error) {
 	return func() (*tls.Config, error) {
-		dataPlaneKeyPair, err := certificates.CreateCert(ctx, caKey, caCertificate, 24*time.Hour, certificates.DataPlaneNamePrefix+namespace, certificates.LegacyFakeDnsName)
+		dataPlaneEdgeKeyPair, err := certificates.CreateCert(ctx, caKey, caCertificate, 24*time.Hour, certificates.DataPlaneEdgePrefix+namespace, certificates.LegacyFakeDnsName)
 		require.NoError(t, err)
 
-		dataPlaneCert, err := tls.X509KeyPair(dataPlaneKeyPair.CertBytes(), dataPlaneKeyPair.PrivateKeyBytes())
+		dataPlaneEdgeCert, err := tls.X509KeyPair(dataPlaneEdgeKeyPair.CertBytes(), dataPlaneEdgeKeyPair.PrivateKeyBytes())
 		require.NoError(t, err)
 
 		certPool := x509.NewCertPool()
 		certPool.AddCert(caCertificate)
 		return &tls.Config{
-			Certificates: []tls.Certificate{dataPlaneCert},
+			Certificates: []tls.Certificate{dataPlaneEdgeCert},
 			ClientCAs:    certPool,
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 			VerifyConnection: func(cs tls.ConnectionState) error {
-				err := cs.PeerCertificates[0].VerifyHostname(certificates.ControlPlaneName)
+				err := cs.PeerCertificates[0].VerifyHostname(certificates.DataPlanePipelinePrefix + "0")
 				return err
 			},
 		}, nil
@@ -73,17 +73,17 @@ func mustGenerateTLSServerConf(t *testing.T, ctx context.Context, caKey *rsa.Pri
 }
 
 func mustGenerateTLSClientConf(t *testing.T, ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *tls.Config {
-	controlPlaneKeyPair, err := certificates.CreateCert(ctx, caKey, caCertificate, 24*time.Hour, certificates.DataPlaneNamePrefix+namespace, certificates.LegacyFakeDnsName)
+	dataPlanePipelineKeyPair, err := certificates.CreateCert(ctx, caKey, caCertificate, 24*time.Hour, certificates.DataPlanePipelinePrefix+"0")
 	require.NoError(t, err)
 
-	controlPlaneCert, err := tls.X509KeyPair(controlPlaneKeyPair.CertBytes(), controlPlaneKeyPair.PrivateKeyBytes())
+	dataPlanePipelineCert, err := tls.X509KeyPair(dataPlanePipelineKeyPair.CertBytes(), dataPlanePipelineKeyPair.PrivateKeyBytes())
 	require.NoError(t, err)
 
 	certPool := x509.NewCertPool()
 	certPool.AddCert(caCertificate)
 	return &tls.Config{
-		Certificates: []tls.Certificate{controlPlaneCert},
+		Certificates: []tls.Certificate{dataPlanePipelineCert},
 		RootCAs:      certPool,
-		ServerName:   certificates.DataPlaneNamePrefix + namespace,
+		ServerName:   certificates.DataPlaneEdgePrefix + namespace,
 	}
 }

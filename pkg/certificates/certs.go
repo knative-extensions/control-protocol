@@ -32,6 +32,8 @@ import (
 	"knative.dev/pkg/logging"
 )
 
+var TID uint32 = 0
+
 var randReader = rand.Reader
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
 
@@ -122,12 +124,12 @@ func CreateCACerts(ctx context.Context, expirationInterval time.Duration) (*KeyP
 	return NewKeyPair(caPrivateKeyPem, caCertPem), nil
 }
 
-// CreateControlPlaneCert generates the certificate for the client
+// Deprecated - CreateControlPlaneCert generates the certificate for the client
 func CreateControlPlaneCert(ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, expirationInterval time.Duration) (*KeyPair, error) {
 	return CreateCert(ctx, caKey, caCertificate, expirationInterval, LegacyFakeDnsName)
 }
 
-// CreateDataPlaneCert generates the certificate for the server
+// Deprecated - CreateDataPlaneCert generates the certificate for the server
 func CreateDataPlaneCert(ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, expirationInterval time.Duration) (*KeyPair, error) {
 	return CreateCert(ctx, caKey, caCertificate, expirationInterval, LegacyFakeDnsName)
 }
