@@ -127,7 +127,7 @@ func CreateControlPlaneCert(ctx context.Context, caKey *rsa.PrivateKey, caCertif
 	return CreateCert(ctx, caKey, caCertificate, expirationInterval, LegacyFakeDnsName)
 }
 
-// Deprecated - CreateDataPlaneCert generates the certificate for the server
+// Deprecated: CreateDataPlaneCert generates the certificate for the server
 func CreateDataPlaneCert(ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, expirationInterval time.Duration) (*KeyPair, error) {
 	return CreateCert(ctx, caKey, caCertificate, expirationInterval, LegacyFakeDnsName)
 }
