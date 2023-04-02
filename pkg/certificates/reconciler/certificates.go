@@ -60,7 +60,6 @@ type reconciler struct {
 	secretLister        listerv1.SecretLister
 	caSecretName        string
 	secretTypeLabelName string
-	secretRoutingId     string
 	enqueueAfter        func(key types.NamespacedName, delay time.Duration)
 
 	logger *zap.SugaredLogger
@@ -102,29 +101,26 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 	}
 
 	// Reconcile the provided secret
-	cert, _, err := parseAndValidateSecret(secret, true)
+	var sans []string
+	switch secret.Labels[r.secretTypeLabelName] {
+	case controlPlaneSecretType:
+		sans = []string{certificates.ControlPlaneName}
+	case dataPlaneRoutingSecretType:
+		routingId := secret.Labels[secretRoutingId]
+		san := certificates.DataPlaneRoutingName(routingId)
+		sans = []string{san, certificates.LegacyFakeDnsName}
+	case dataPlaneEdgeSecretType:
+		sans = []string{certificates.DataPlaneEdgeName(secret.Namespace), certificates.LegacyFakeDnsName}
+	case dataPlaneDeprecatedSecretType:
+		sans = []string{certificates.LegacyFakeDnsName}
+	default:
+		return fmt.Errorf("unknown cert type: %v", r.secretTypeLabelName)
+	}
+
+	cert, _, err := parseAndValidateSecret(secret, true, sans...)
 	if err != nil {
 		r.logger.Infof("Secret invalid: %v", err)
 		// Check the secret to reconcile type
-
-		routingId := secret.Labels[r.secretRoutingId]
-		if routingId == "" {
-			routingId = "0"
-		}
-
-		var sans []string
-		switch secret.Labels[r.secretTypeLabelName] {
-		case controlPlaneSecretType:
-			sans = []string{certificates.ControlPlaneName}
-		case dataPlaneRoutingSecretType:
-			sans = []string{certificates.DataPlaneRoutingName(routingId), certificates.LegacyFakeDnsName}
-		case dataPlaneEdgeSecretType:
-			sans = []string{certificates.DataPlaneEdgeName(secret.Namespace), certificates.LegacyFakeDnsName}
-		case dataPlaneDeprecatedSecretType:
-			sans = []string{certificates.LegacyFakeDnsName}
-		default:
-			return fmt.Errorf("unknown cert type: %v", r.secretTypeLabelName)
-		}
 
 		var keyPair *certificates.KeyPair
 		keyPair, err = certificates.CreateCert(ctx, caPk, caCert, expirationInterval, sans...)
@@ -146,7 +142,7 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 	return nil
 }
 
-func parseAndValidateSecret(secret *corev1.Secret, shouldContainCaCert bool) (*x509.Certificate, *rsa.PrivateKey, error) {
+func parseAndValidateSecret(secret *corev1.Secret, shouldContainCaCert bool, sans ...string) (*x509.Certificate, *rsa.PrivateKey, error) {
 	certBytes, ok := secret.Data[certificates.SecretCertKey]
 	if !ok {
 		return nil, nil, fmt.Errorf("missing cert bytes")
@@ -161,14 +157,25 @@ func parseAndValidateSecret(secret *corev1.Secret, shouldContainCaCert bool) (*x
 		}
 	}
 
-	caCert, caPk, err := certificates.ParseCert(certBytes, pkBytes)
+	cert, caPk, err := certificates.ParseCert(certBytes, pkBytes)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := certificates.ValidateCert(caCert, rotationThreshold); err != nil {
+	if err := certificates.ValidateCert(cert, rotationThreshold); err != nil {
 		return nil, nil, err
 	}
-	return caCert, caPk, nil
+
+OUTER:
+	for _, san := range sans {
+		for _, certSan := range cert.DNSNames {
+			if certSan == san {
+				continue OUTER
+			}
+		}
+		return nil, nil, fmt.Errorf("missing san %s", san)
+	}
+
+	return cert, caPk, nil
 }
 
 func (r *reconciler) enqueueBeforeExpiration(secret *corev1.Secret, cert *x509.Certificate) {

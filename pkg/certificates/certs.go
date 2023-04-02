@@ -35,7 +35,7 @@ import (
 var randReader = rand.Reader
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
 
-// Copy-pasted from https://github.com/knative/pkg/blob/975a1cf9e4470b26ce54d9cc628dbd50716b6b95/webhook/certificates/resources/certs.go
+// Create template common to all certificates
 func createCertTemplate(expirationInterval time.Duration, sans []string) (*x509.Certificate, error) {
 	serialNumber, err := rand.Int(randReader, serialNumberLimit)
 	if err != nil {
