@@ -105,7 +105,7 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 	var sans []string
 	switch secret.Labels[r.secretTypeLabelName] {
 	case controlPlaneSecretType:
-		sans = []string{certificates.ControlPlaneName}
+		sans = []string{certificates.ControlPlaneName, certificates.LegacyFakeDnsName}
 	case dataPlaneRoutingSecretType:
 		routingId := secret.Labels[secretRoutingId]
 		san := certificates.DataPlaneRoutingName(routingId)
