@@ -21,6 +21,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
+	strings "strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -168,11 +169,11 @@ func parseAndValidateSecret(secret *corev1.Secret, shouldContainCaCert bool, san
 OUTER:
 	for _, san := range sans {
 		for _, certSan := range cert.DNSNames {
-			if certSan == san {
+			if strings.EqualFold(certSan, san) {
 				continue OUTER
 			}
 		}
-		return nil, nil, fmt.Errorf("missing san %s", san)
+		return nil, nil, fmt.Errorf("missing san %q", san)
 	}
 
 	return cert, caPk, nil

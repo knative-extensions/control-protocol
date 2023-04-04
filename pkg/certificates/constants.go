@@ -36,13 +36,17 @@ const (
 	SecretPKKey     = "private-key.pem"
 )
 
-func DataPlaneRoutingName(rountingId string) string {
-	if rountingId == "" {
-		rountingId = "0"
+// DataPlaneRoutingName constructs a san for a data-plane-routing certificate
+// Accepts a routingId  - a unique identifier used as part of the san (default is "0" used when an empty routingId is provided)
+func DataPlaneRoutingName(routingId string) string {
+	if routingId == "" {
+		routingId = "0"
 	}
-	return dataPlaneRoutingPrefix + rountingId
+	return dataPlaneRoutingPrefix + routingId
 }
 
+// DataPlaneEdgeName constructs a san for a data-plane-edge certificate
+// Accepts a namespace  - the namespace for which the certificate was created
 func DataPlaneEdgeName(namespace string) string {
 	return dataPlaneEdgePrefix + namespace
 }
