@@ -48,8 +48,8 @@ const (
 	// certificates used by trusted data routing elements such as activator, ingress gw
 	dataPlaneRoutingSecretType = "data-plane-routing"
 
-	// certificates used by edges acting as senders and receivers in the data-plane such as queue
-	dataPlaneEdgeSecretType = "data-plane-edge"
+	// certificates used by entities acting as senders and receivers (users) of the data-plane such as queue
+	dataPlaneUserSecretType = "data-plane-user"
 
 	// Deprecated used by any data plane element
 	dataPlaneDeprecatedSecretType = "data-plane"
@@ -110,8 +110,8 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 		routingId := secret.Labels[secretRoutingId]
 		san := certificates.DataPlaneRoutingName(routingId)
 		sans = []string{san, certificates.LegacyFakeDnsName}
-	case dataPlaneEdgeSecretType:
-		sans = []string{certificates.DataPlaneEdgeName(secret.Namespace), certificates.LegacyFakeDnsName}
+	case dataPlaneUserSecretType:
+		sans = []string{certificates.DataPlaneUserName(secret.Namespace), certificates.LegacyFakeDnsName}
 	case dataPlaneDeprecatedSecretType:
 		sans = []string{certificates.LegacyFakeDnsName}
 	default:

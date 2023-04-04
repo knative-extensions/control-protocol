@@ -52,16 +52,16 @@ func MustGenerateTestTLSConf(t *testing.T, ctx context.Context) (func() (*tls.Co
 
 func mustGenerateTLSServerConf(t *testing.T, ctx context.Context, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) func() (*tls.Config, error) {
 	return func() (*tls.Config, error) {
-		dataPlaneEdgeKeyPair, err := certificates.CreateCert(ctx, caKey, caCertificate, 24*time.Hour, certificates.DataPlaneEdgeName(namespace), certificates.LegacyFakeDnsName)
+		dataPlaneUserKeyPair, err := certificates.CreateCert(ctx, caKey, caCertificate, 24*time.Hour, certificates.DataPlaneUserName(namespace), certificates.LegacyFakeDnsName)
 		require.NoError(t, err)
 
-		dataPlaneEdgeCert, err := tls.X509KeyPair(dataPlaneEdgeKeyPair.CertBytes(), dataPlaneEdgeKeyPair.PrivateKeyBytes())
+		dataPlaneUserCert, err := tls.X509KeyPair(dataPlaneUserKeyPair.CertBytes(), dataPlaneUserKeyPair.PrivateKeyBytes())
 		require.NoError(t, err)
 
 		certPool := x509.NewCertPool()
 		certPool.AddCert(caCertificate)
 		return &tls.Config{
-			Certificates: []tls.Certificate{dataPlaneEdgeCert},
+			Certificates: []tls.Certificate{dataPlaneUserCert},
 			ClientCAs:    certPool,
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 			VerifyConnection: func(cs tls.ConnectionState) error {
@@ -84,6 +84,6 @@ func mustGenerateTLSClientConf(t *testing.T, ctx context.Context, caKey *rsa.Pri
 	return &tls.Config{
 		Certificates: []tls.Certificate{dataPlaneRoutingCert},
 		RootCAs:      certPool,
-		ServerName:   certificates.DataPlaneEdgeName(namespace),
+		ServerName:   certificates.DataPlaneUserName(namespace),
 	}
 }

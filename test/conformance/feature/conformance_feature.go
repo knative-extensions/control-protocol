@@ -65,7 +65,7 @@ func conformanceFeature(featureName string, tls bool) *feature.Feature {
 			dataPlaneRoutingKeyPair, err := certificates.CreateCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneRoutingName(""), certificates.LegacyFakeDnsName)
 			require.NoError(t, err)
 
-			dataPlaneEdgeKeyPair, err := certificates.CreateCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneEdgeName("myns"), certificates.LegacyFakeDnsName)
+			dataPlaneUserKeyPair, err := certificates.CreateCert(ctx, caPrivateKey, caCert, 24*time.Hour, certificates.DataPlaneUserName("myns"), certificates.LegacyFakeDnsName)
 			require.NoError(t, err)
 
 			// Create the secrets
@@ -86,8 +86,8 @@ func conformanceFeature(featureName string, tls bool) *feature.Feature {
 					Namespace: environment.FromContext(ctx).Namespace(),
 				},
 				Data: map[string][]byte{
-					certificates.SecretCertKey:   dataPlaneEdgeKeyPair.CertBytes(),
-					certificates.SecretPKKey:     dataPlaneEdgeKeyPair.PrivateKeyBytes(),
+					certificates.SecretCertKey:   dataPlaneUserKeyPair.CertBytes(),
+					certificates.SecretPKKey:     dataPlaneUserKeyPair.PrivateKeyBytes(),
 					certificates.SecretCaCertKey: caKP.CertBytes(),
 				},
 			}

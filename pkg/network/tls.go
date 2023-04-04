@@ -58,7 +58,7 @@ func LoadClientTLSConfigFromFile() (*tls.Config, error) {
 	conf := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      certPool,
-		ServerName:   certificates.DataPlaneEdgeName("myns"),
+		ServerName:   certificates.DataPlaneUserName("myns"),
 	}
 
 	return conf, nil

@@ -20,7 +20,7 @@ const (
 	Organization           = "knative.dev"
 	LegacyFakeDnsName      = "data-plane." + Organization
 	FakeDnsName            = LegacyFakeDnsName // Deprecated
-	dataPlaneEdgePrefix    = "k-"
+	dataPlaneUserPrefix    = "k-"
 	dataPlaneRoutingPrefix = "krouting-"
 	ControlPlaneName       = "kcontrol"
 
@@ -45,8 +45,8 @@ func DataPlaneRoutingName(routingId string) string {
 	return dataPlaneRoutingPrefix + routingId
 }
 
-// DataPlaneEdgeName constructs a san for a data-plane-edge certificate
+// DataPlaneUserName constructs a san for a data-plane-user certificate
 // Accepts a namespace  - the namespace for which the certificate was created
-func DataPlaneEdgeName(namespace string) string {
-	return dataPlaneEdgePrefix + namespace
+func DataPlaneUserName(namespace string) string {
+	return dataPlaneUserPrefix + namespace
 }

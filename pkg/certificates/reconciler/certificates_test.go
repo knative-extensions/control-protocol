@@ -103,20 +103,20 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	dataPlaneEdgeKP := mustCreateDataPlaneEdgeCert(t, 10*time.Hour, caKey, caCertificate, "myns")
+	dataPlaneUserKP := mustCreateDataPlaneUserCert(t, 10*time.Hour, caKey, caCertificate, "myns")
 
-	wellFormedDataPlaneEdgeSecret := &corev1.Secret{
+	wellFormedDataPlaneUserSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "data-plane-edge-ctrl",
+			Name:      "data-plane-user-ctrl",
 			Namespace: namespace,
 			Labels: map[string]string{
-				labelName: dataPlaneEdgeSecretType,
+				labelName: dataPlaneUserSecretType,
 			},
 		},
 		Data: map[string][]byte{
 			certificates.SecretCaCertKey: caKP.CertBytes(),
-			certificates.SecretCertKey:   dataPlaneEdgeKP.CertBytes(),
-			certificates.SecretPKKey:     dataPlaneEdgeKP.PrivateKeyBytes(),
+			certificates.SecretCertKey:   dataPlaneUserKP.CertBytes(),
+			certificates.SecretPKKey:     dataPlaneUserKP.PrivateKeyBytes(),
 			certificates.CaCertName:      caKP.CertBytes(),
 			certificates.CertName:        controlPlaneKP.CertBytes(),
 			certificates.PrivateKeyName:  controlPlaneKP.PrivateKeyBytes(),
@@ -162,15 +162,15 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 	}, {
-		name:    "well formed secret CA and data plane edge secret exists",
+		name:    "well formed secret CA and data plane user secret exists",
 		key:     namespace + "/data-plane-ctrl",
-		objects: []*corev1.Secret{wellFormedCaSecret, wellFormedDataPlaneEdgeSecret},
+		objects: []*corev1.Secret{wellFormedCaSecret, wellFormedDataPlaneUserSecret},
 		asserts: map[string]func(*testing.T, *corev1.Secret){
 			wellFormedCaSecret.Name: func(t *testing.T, secret *corev1.Secret) {
 				require.Equal(t, wellFormedCaSecret, secret)
 			},
-			wellFormedDataPlaneEdgeSecret.Name: func(t *testing.T, secret *corev1.Secret) {
-				require.Equal(t, wellFormedDataPlaneEdgeSecret, secret)
+			wellFormedDataPlaneUserSecret.Name: func(t *testing.T, secret *corev1.Secret) {
+				require.Equal(t, wellFormedDataPlaneUserSecret, secret)
 			},
 		},
 	}, {
@@ -208,7 +208,7 @@ func TestReconcile(t *testing.T) {
 			"control-plane-ctrl": validControlPlaneCert,
 		},
 	}, {
-		name:                   "empty CA secret and empty data plane edge secret",
+		name:                   "empty CA secret and empty data plane user secret",
 		key:                    namespace + "/data-plane-ctrl",
 		executeReconcilerTwice: true,
 		objects: []*corev1.Secret{{
@@ -221,7 +221,7 @@ func TestReconcile(t *testing.T) {
 				Name:      "data-plane-ctrl",
 				Namespace: namespace,
 				Labels: map[string]string{
-					labelName: dataPlaneEdgeSecretType,
+					labelName: dataPlaneUserSecretType,
 				},
 			},
 		}},
@@ -368,8 +368,8 @@ func mustCreateCACert(t *testing.T, expirationInterval time.Duration) (*certific
 	return kp, cert, pk
 }
 
-func mustCreateDataPlaneEdgeCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
-	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneEdgeName(namespace), certificates.LegacyFakeDnsName)
+func mustCreateDataPlaneUserCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate, namespace string) *certificates.KeyPair {
+	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.DataPlaneUserName(namespace), certificates.LegacyFakeDnsName)
 	require.NoError(t, err)
 	return kp
 }
