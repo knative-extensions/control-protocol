@@ -381,7 +381,7 @@ func mustCreateDataPlaneRoutingCert(t *testing.T, expirationInterval time.Durati
 }
 
 func mustCreateControlPlaneCert(t *testing.T, expirationInterval time.Duration, caKey *rsa.PrivateKey, caCertificate *x509.Certificate) *certificates.KeyPair {
-	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.ControlPlaneName)
+	kp, err := certificates.CreateCert(context.TODO(), caKey, caCertificate, expirationInterval, certificates.ControlPlaneName, certificates.LegacyFakeDnsName)
 	require.NoError(t, err)
 	return kp
 }
