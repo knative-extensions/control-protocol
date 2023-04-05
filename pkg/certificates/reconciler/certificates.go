@@ -21,7 +21,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
-	strings "strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -29,6 +28,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	listerv1 "k8s.io/client-go/listers/core/v1"
 	pkgreconciler "knative.dev/pkg/reconciler"
@@ -143,6 +143,7 @@ func (r *reconciler) ReconcileKind(ctx context.Context, secret *corev1.Secret) p
 	return nil
 }
 
+// All sans provided are required to be lower case
 func parseAndValidateSecret(secret *corev1.Secret, shouldContainCaCert bool, sans ...string) (*x509.Certificate, *rsa.PrivateKey, error) {
 	certBytes, ok := secret.Data[certificates.SecretCertKey]
 	if !ok {
@@ -166,14 +167,10 @@ func parseAndValidateSecret(secret *corev1.Secret, shouldContainCaCert bool, san
 		return nil, nil, err
 	}
 
-OUTER:
-	for _, san := range sans {
-		for _, certSan := range cert.DNSNames {
-			if strings.EqualFold(certSan, san) {
-				continue OUTER
-			}
-		}
-		return nil, nil, fmt.Errorf("missing san %q", san)
+	sanSet := sets.NewString(sans...)
+	certSet := sets.NewString(cert.DNSNames...)
+	if !sanSet.Equal(certSet) {
+		return nil, nil, fmt.Errorf("unexpected SANs")
 	}
 
 	return cert, caPk, nil
