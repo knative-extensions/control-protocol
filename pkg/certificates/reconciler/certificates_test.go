@@ -68,7 +68,7 @@ func TestReconcile(t *testing.T) {
 	caSecretName := "my-ctrl-ca"
 	labelName := "my-ctrl"
 
-	caKP, caKey, caCertificate := mustCreateCACert(t, 10*time.Hour)
+	caKP, caKey, caCertificate := mustCreateCACert(t, caExpirationInterval)
 
 	wellFormedCaSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	controlPlaneKP := mustCreateControlPlaneCert(t, 10*time.Hour, caKey, caCertificate)
+	controlPlaneKP := mustCreateControlPlaneCert(t, expirationInterval, caKey, caCertificate)
 
 	wellFormedControlPlaneSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -103,7 +103,7 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	dataPlaneUserKP := mustCreateDataPlaneUserCert(t, 10*time.Hour, caKey, caCertificate, "myns")
+	dataPlaneUserKP := mustCreateDataPlaneUserCert(t, expirationInterval, caKey, caCertificate, "myns")
 
 	wellFormedDataPlaneUserSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
