@@ -33,7 +33,10 @@ func LoadServerTLSConfigFromFile() (*tls.Config, error) {
 		Certificates: []tls.Certificate{cert},
 		ClientCAs:    certPool,
 		ClientAuth:   tls.RequireAndVerifyClientCert,
-		ServerName:   "knative-myns",
+		VerifyConnection: func(cs tls.ConnectionState) error {
+			err := cs.PeerCertificates[0].VerifyHostname(certificates.DataPlaneRoutingName(""))
+			return err
+		},
 	}
 
 	return conf, nil
@@ -55,7 +58,7 @@ func LoadClientTLSConfigFromFile() (*tls.Config, error) {
 	conf := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      certPool,
-		ServerName:   "knative-myns",
+		ServerName:   certificates.DataPlaneUserName("myns"),
 	}
 
 	return conf, nil
